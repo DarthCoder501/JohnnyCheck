@@ -346,6 +346,35 @@ describe("nickname map", () => {
     expect(areNicknames("al", "alfred")).toBe(true);
     expect(areNicknames("albert", "alfred")).toBe(false);
   });
+
+  it("matches faculty given-name variants and keeps shared short forms apart", () => {
+    expect(areNicknames("marc", "mark")).toBe(true);
+    expect(areNicknames("kathleen", "kate")).toBe(true);
+    expect(areNicknames("elisabeth", "liz")).toBe(true);
+    expect(areNicknames("therese", "tess")).toBe(true);
+    expect(areNicknames("nicolaos", "nick")).toBe(true);
+    expect(areNicknames("rebekah", "becky")).toBe(true);
+    expect(areNicknames("debora", "debbie")).toBe(true);
+    expect(areNicknames("mathew", "matt")).toBe(true);
+    expect(areNicknames("salvatore", "sal")).toBe(true);
+    expect(areNicknames("meghan", "meaghan")).toBe(true);
+    expect(areNicknames("jeremy", "jeremiah")).toBe(true);
+    expect(areNicknames("gerard", "gerry")).toBe(true);
+    expect(areNicknames("gerard", "gerald")).toBe(false);
+    expect(areNicknames("jerome", "jerry")).toBe(true);
+    expect(areNicknames("jerome", "gerald")).toBe(false);
+    expect(areNicknames("antonio", "tony")).toBe(true);
+    expect(areNicknames("antonio", "anthony")).toBe(false);
+    expect(areNicknames("francesca", "fran")).toBe(true);
+    expect(areNicknames("francesca", "frances")).toBe(false);
+    expect(areNicknames("louise", "lou")).toBe(true);
+    expect(areNicknames("louise", "louis")).toBe(false);
+    expect(areNicknames("natalie", "nat")).toBe(true);
+    expect(areNicknames("natalie", "nathan")).toBe(false);
+    expect(areNicknames("leonardo", "leo")).toBe(true);
+    expect(areNicknames("leonardo", "leonard")).toBe(false);
+    expect(areNicknames("mary", "maria")).toBe(false);
+  });
 });
 
 describe("campus and cache keys", () => {
