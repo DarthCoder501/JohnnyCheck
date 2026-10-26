@@ -1,0 +1,8 @@
+"$schema" = "../node_modules/wrangler/config-schema.json"
+name = "red-storm-prof-ratings"
+main = "src/index.ts"
+compatibility_date = "2026-10-26"
+workers_dev = false
+
+[vars]
+cacheVersion = 1
