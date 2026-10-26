@@ -1,0 +1,27 @@
+{
+  "name": "red-storm-prof-ratings",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Unofficial Chrome extension that shows Rate My Professors scores on St. John's Banner 9 class search results.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "npm run typecheck:shared && npm run typecheck:worker && npm run typecheck:extension",
+    "typecheck:shared": "tsc -p shared/tsconfig.json",
+    "typecheck:worker": "tsc -p worker/tsconfig.json",
+    "typecheck:extension": "tsc -p extension/tsconfig.json",
+    "build:extension": "node extension/build.mjs",
+    "dev:worker": "wrangler dev --config worker/wrangler.toml",
+    "deploy:worker": "wrangler deploy --config worker/wrangler.toml",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261021.1",
+    "@types/chrome": "0.3.6",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.3"
+  }
+}

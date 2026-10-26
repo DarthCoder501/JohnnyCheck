@@ -1,0 +1,23 @@
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+export function isNullableNumber(value: unknown): value is number | null {
+  return value === null || isFiniteNumber(value);
+}
+
+export function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+export function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+export function isBoundedString(value: unknown, maxLength: number): value is string {
+  return typeof value === "string" && value.trim() !== "" && value.length <= maxLength;
+}
