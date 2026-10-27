@@ -16,7 +16,7 @@ const STATEN_ISLAND = resolution(true, [SCHOOL_IDS.statenIsland, SCHOOL_IDS.quee
 const MANHATTAN = resolution(true, [SCHOOL_IDS.manhattan, SCHOOL_IDS.queens, SCHOOL_IDS.generic]);
 const UNKNOWN = resolution(false, ALL_SCHOOL_IDS);
 
-/** Rome, `Online Learning`, a hidden Campus column, or any other text searches all four listings. */
+/** `Online Learning`, a hidden campus, and any other text search all four listings. Staten Island is not on the 2026-10-26 picker. A leftover Staten Island string still resolves below. */
 export function resolveCampus(text: string | null | undefined): CampusResolution {
   if (text == null) {
     return UNKNOWN;

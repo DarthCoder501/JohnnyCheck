@@ -564,11 +564,22 @@ describe("rating contract", () => {
   });
 });
 
+function batch(count: number, campus: string | null) {
+  return Array.from({ length: count }, (_, index) => ({
+    key: `k${index}`,
+    name: "Joan DeBello",
+    campus,
+    subject: "HISTORY",
+  }));
+}
+
 describe("batch limits", () => {
-  it("uses 8 for a known campus and 4 when the campus is unknown", () => {
-    expect(batchSizeFor(" Queens Campus")).toBe(8);
-    expect(batchSizeFor("Online Learning")).toBe(4);
-    expect(batchSizeFor(null)).toBe(4);
+  it("sizes each campus from the 48-fetch ceiling", () => {
+    expect(batchSizeFor(" Queens Campus")).toBe(6);
+    expect(batchSizeFor("Manhattan Campus")).toBe(4);
+    expect(batchSizeFor("Staten Island")).toBe(4);
+    expect(batchSizeFor("Online Learning")).toBe(3);
+    expect(batchSizeFor(null)).toBe(3);
 
     const queens = { campus: " Queens Campus" as string | null };
     const online = { campus: "Online Learning" as string | null };
@@ -582,29 +593,24 @@ describe("batch limits", () => {
     ]);
     expect(chunks.map((chunk) => chunk.map((item) => item.id))).toEqual([
       ["q1", "q2"],
-      ["o1", "o2", "o3", "o4"],
+      ["o1", "o2", "o3"],
+      ["o4"],
     ]);
 
-    const eightQueens = Array.from({ length: 8 }, (_, index) => ({
-      key: `q${index}`,
-      name: "Joan DeBello",
-      campus: " Queens Campus",
-      subject: "HISTORY",
-    }));
-    expect(parseRatingsRequest({ items: eightQueens }).ok).toBe(true);
-
-    const fiveOnline = Array.from({ length: 5 }, (_, index) => ({
-      key: `o${index}`,
-      name: "Joan DeBello",
-      campus: "Online Learning",
-      subject: "THEOLOGY",
-    }));
-    expect(parseRatingsRequest({ items: fiveOnline }).ok).toBe(false);
-
+    expect(parseRatingsRequest({ items: batch(6, " Queens Campus") }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(7, " Queens Campus") }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(4, "Manhattan Campus") }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(5, "Manhattan Campus") }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(3, "Online Learning") }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(4, "Online Learning") }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(3, null) }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(4, null) }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(4, "Staten Island") }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(5, "Staten Island") }).ok).toBe(false);
     expect(
       parseRatingsRequest({
         items: [
-          ...eightQueens.slice(0, 4),
+          ...batch(3, " Queens Campus"),
           { key: "o", name: "Joan DeBello", campus: "Online Learning", subject: "THEOLOGY" },
         ],
       }).ok,

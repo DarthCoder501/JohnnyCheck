@@ -1,11 +1,11 @@
 import { resolveCampus } from "./campus";
 import {
-  BATCH_SIZE_KNOWN_CAMPUS,
-  BATCH_SIZE_UNKNOWN_CAMPUS,
+  FETCHES_PER_SCHOOL,
   MAX_ITEM_CAMPUS_LENGTH,
   MAX_ITEM_KEY_LENGTH,
   MAX_ITEM_NAME_LENGTH,
   MAX_ITEM_SUBJECT_LENGTH,
+  MAX_UPSTREAM_FETCHES,
   type RatingRequestItem,
   type RatingsRequest,
 } from "./contract";
@@ -13,16 +13,18 @@ import { isBoundedString, isRecord } from "./guards";
 
 type CampusCarrier = Pick<RatingRequestItem, "campus">;
 
+/** 48 fetches divided by four fetches per school. Queens is largest because it searches two schools. */
 export function batchSizeFor(campusText: string | null | undefined): number {
-  return resolveCampus(campusText).known ? BATCH_SIZE_KNOWN_CAMPUS : BATCH_SIZE_UNKNOWN_CAMPUS;
+  const schools = resolveCampus(campusText).schools.length;
+  return Math.floor(MAX_UPSTREAM_FETCHES / (schools * FETCHES_PER_SCHOOL));
 }
 
-/** A request holding any unknown-campus item is capped at the smaller batch size. */
+/** A request is capped at the smallest campus size in it. */
 export function batchLimit(items: readonly CampusCarrier[]): number {
-  return items.reduce((limit, item) => Math.min(limit, batchSizeFor(item.campus)), BATCH_SIZE_KNOWN_CAMPUS);
+  return items.reduce((limit, item) => Math.min(limit, batchSizeFor(item.campus)), batchSizeFor("Queens"));
 }
 
-/** Known-campus items travel in chunks of 8 and unknown-campus items in chunks of 4, in page order. */
+/** Items that share a batch size travel together, in page order. */
 export function chunkRequestItems<T extends CampusCarrier>(items: readonly T[]): T[][] {
   const chunks: T[][] = [];
   const openChunks = new Map<number, T[]>();
@@ -65,7 +67,8 @@ function parseItem(value: unknown): RatingRequestItem | null {
   const subject = parseOptionalText(value.subject, MAX_ITEM_SUBJECT_LENGTH);
   if (
     !isBoundedString(key, MAX_ITEM_KEY_LENGTH) ||
-    !isBoundedString(name, MAX_ITEM_NAME_LENGTH) ||
+    typeof name !== "string" ||
+    name.length > MAX_ITEM_NAME_LENGTH ||
     campus === undefined ||
     subject === undefined
   ) {
@@ -82,8 +85,9 @@ export function parseRatingsRequest(body: unknown): RatingsRequestParse {
   if (body.items.length === 0) {
     return { ok: false, error: "items must not be empty." };
   }
-  if (body.items.length > BATCH_SIZE_KNOWN_CAMPUS) {
-    return { ok: false, error: `At most ${BATCH_SIZE_KNOWN_CAMPUS} items fit in one request.` };
+  const maxBatch = batchSizeFor("Queens");
+  if (body.items.length > maxBatch) {
+    return { ok: false, error: `At most ${maxBatch} items fit in one request.` };
   }
   const items: RatingRequestItem[] = [];
   for (const value of body.items) {

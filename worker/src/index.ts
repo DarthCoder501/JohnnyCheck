@@ -1,16 +1,18 @@
 import { API_PATHS } from "../../shared/src/contract";
+import { handleRatings, type Env } from "./ratings";
 
-interface Env {
-  cacheVersion: number;
-}
+export type { Env };
 
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method !== "GET" || url.pathname !== API_PATHS.version) {
-      return new Response(null, { status: 404 });
+    if (request.method === "POST" && url.pathname === API_PATHS.ratings) {
+      return handleRatings(request, env);
     }
-    return Response.json({ cacheVersion: env.cacheVersion });
+    if (request.method === "GET" && url.pathname === API_PATHS.version) {
+      return Response.json({ cacheVersion: env.cacheVersion });
+    }
+    return new Response(null, { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
 

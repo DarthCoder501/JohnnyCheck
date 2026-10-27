@@ -2,11 +2,20 @@ import { describe, expect, it } from "vitest";
 import { API_PATHS, parseVersionResponse } from "../../shared/src/contract";
 import worker from "../src/index";
 
-const env = { cacheVersion: 1 };
+const env = {
+  cacheVersion: 1,
+  rmpToken: "",
+  RATINGS: {
+    async get() {
+      return null;
+    },
+    async put() {},
+  },
+};
 
 function call(path: string, method = "GET", cacheVersion = env.cacheVersion) {
   const request = new Request(`https://ratings.example${path}`, { method });
-  return worker.fetch(request, { cacheVersion });
+  return worker.fetch(request, { ...env, cacheVersion });
 }
 
 describe("GET /v1/version", () => {

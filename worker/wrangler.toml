@@ -6,3 +6,8 @@ workers_dev = false
 
 [vars]
 cacheVersion = 1
+
+# rmpToken is a Wrangler var set outside this file. Do not commit the client token.
+# The namespace id is added when the namespace is created. This task does not create it.
+[[kv_namespaces]]
+binding = "RATINGS"

@@ -45,18 +45,31 @@ interface Candidate {
 }
 
 /** Both sides empty or equal is exact. One side only is `initial`. Differing middles are not exact. */
-function exactReasons(banner: readonly string[], profile: readonly string[]): MatchReason[] | null {
+function exactReasons(
+  banner: readonly string[],
+  profile: readonly string[],
+): MatchReason[] | null {
   const left = banner.filter((key) => key !== "");
   const right = profile.filter((key) => key !== "");
   if (left.length === 0 || right.length === 0) {
     return left.length === right.length ? [] : ["initial"];
   }
-  const same = left.length === right.length && left.every((key, index) => key === right[index]);
+  const same =
+    left.length === right.length &&
+    left.every((key, index) => key === right[index]);
   return same ? [] : null;
 }
 
-function scoredResult(teacher: Teacher, match: MatchConfidence, reasons: MatchReason[]): RatingResult {
-  if (!isNonNegativeInteger(teacher.legacyId) || teacher.legacyId <= 0 || !isNonNegativeInteger(teacher.numRatings)) {
+function scoredResult(
+  teacher: Teacher,
+  match: MatchConfidence,
+  reasons: MatchReason[],
+): RatingResult {
+  if (
+    !isNonNegativeInteger(teacher.legacyId) ||
+    teacher.legacyId <= 0 ||
+    !isNonNegativeInteger(teacher.numRatings)
+  ) {
     return unavailableResult();
   }
   const fields = {
@@ -108,7 +121,10 @@ function candidatesFor(
     const row = { teacher, keys };
     if (keys.familyKey === name.familyKey) {
       full.push(row);
-    } else if (name.familyFinalKey !== name.familyKey && keys.familyKey === name.familyFinalKey) {
+    } else if (
+      name.familyFinalKey !== name.familyKey &&
+      keys.familyKey === name.familyFinalKey
+    ) {
       fallback.push(row);
     }
   }
@@ -145,8 +161,13 @@ function candidatesFor(
   return candidates;
 }
 
-function choose(candidates: readonly Candidate[], campusKnown: boolean): Candidate | null {
-  const ownCampus = candidates.filter((candidate) => !candidate.reasons.includes("cross_campus"));
+function choose(
+  candidates: readonly Candidate[],
+  campusKnown: boolean,
+): Candidate | null {
+  const ownCampus = candidates.filter(
+    (candidate) => !candidate.reasons.includes("cross_campus"),
+  );
   const pool = ownCampus.length > 0 ? ownCampus : candidates;
   const [first] = pool;
   if (first === undefined) {
@@ -181,10 +202,15 @@ export function rankMatch(
   subjectText: string | null,
   teachers: readonly Teacher[],
 ): RatingResult {
-  const chosen = choose(candidatesFor(name, campus, subjectText, teachers), campus.known);
+  const chosen = choose(
+    candidatesFor(name, campus, subjectText, teachers),
+    campus.known,
+  );
   if (chosen === null) {
     return notListedResult();
   }
-  const match = chosen.reasons.some((reason) => UNCERTAIN_REASONS.has(reason)) ? "possible" : "exact";
+  const match = chosen.reasons.some((reason) => UNCERTAIN_REASONS.has(reason))
+    ? "possible"
+    : "exact";
   return scoredResult(chosen.teacher, match, chosen.reasons);
 }

@@ -63,14 +63,16 @@ export function rmpProfileUrl(legacyId: number): string {
   return `https://www.ratemyprofessors.com/professor/${legacyId}`;
 }
 
-export const BATCH_SIZE_KNOWN_CAMPUS = 8;
-export const BATCH_SIZE_UNKNOWN_CAMPUS = 4;
 export const TTL_RATED_SECONDS = 7 * 24 * 60 * 60;
 export const TTL_SHORT_SECONDS = 24 * 60 * 60;
 export const VERSION_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 export const SURNAME_PAGE_SIZE = 100;
 export const MAX_PAGES_PER_SURNAME_SCHOOL = 2;
 export const UPSTREAM_CONCURRENCY = 6;
+/** Two pages for the family name and two for the final token. */
+export const FETCHES_PER_SCHOOL = MAX_PAGES_PER_SURNAME_SCHOOL * 2;
+/** Free plan allows 50 external fetches. Two are left unused. */
+export const MAX_UPSTREAM_FETCHES = 48;
 
 export const MAX_ITEM_KEY_LENGTH = 300;
 export const MAX_ITEM_NAME_LENGTH = 200;
