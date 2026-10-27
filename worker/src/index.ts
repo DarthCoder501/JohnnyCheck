@@ -1,5 +1,6 @@
 import { API_PATHS } from "../../shared/src/contract";
-import { handleRatings, type Env } from "./ratings";
+import { handleCachedRatings } from "./edge";
+import { type Env } from "./ratings";
 
 export type { Env };
 
@@ -7,7 +8,7 @@ const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === API_PATHS.ratings) {
-      return handleRatings(request, env);
+      return handleCachedRatings(request, env);
     }
     if (request.method === "GET" && url.pathname === API_PATHS.version) {
       return Response.json({ cacheVersion: env.cacheVersion });
