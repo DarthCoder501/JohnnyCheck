@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Red Storm Professor Ratings",
+  "version": "0.1.0",
+  "description": "Unofficial. Shows Rate My Professors scores on St. John's Banner 9 class search.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*",
+    "https://red-storm-prof-ratings.johnnycheck.workers.dev/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*"],
+      "js": ["src/content-script.ts"]
+    }
+  ]
+}
