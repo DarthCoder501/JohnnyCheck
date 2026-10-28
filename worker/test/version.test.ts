@@ -38,7 +38,7 @@ describe("GET /v1/version", () => {
       call("/v1/ratings"),
       call("/v1/version/"),
       call(API_PATHS.version, "POST"),
-      call("/privacy"),
+      call("/privacy", "POST"),
     ]);
     expect(misses.map((response) => response.status)).toEqual([404, 404, 404, 404, 404]);
   });

@@ -1,5 +1,6 @@
 import { API_PATHS } from "../../shared/src/contract";
 import { handleLimitedRatings, RateLimits, type Env } from "./limits";
+import { PRIVACY_PATH, privacyResponse } from "./privacy";
 
 export type { Env };
 export { RateLimits };
@@ -12,6 +13,9 @@ const worker = {
     }
     if (request.method === "GET" && url.pathname === API_PATHS.version) {
       return Response.json({ cacheVersion: env.cacheVersion });
+    }
+    if (request.method === "GET" && url.pathname === PRIVACY_PATH) {
+      return privacyResponse();
     }
     return new Response(null, { status: 404 });
   },
