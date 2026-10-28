@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveCampus } from "../../shared/src/campus";
 import {
+  CLIENT_ID_HEADER,
   SCHOOL_IDS,
   TTL_RATED_SECONDS,
   TTL_SHORT_SECONDS,
@@ -47,7 +48,12 @@ function memoryKv(failPut = false): MemoryKv {
 }
 
 function envFor(kv: MemoryKv, cacheVersion = 1): Env {
-  return { cacheVersion, rmpToken: TOKEN, RATINGS: kv };
+  return {
+    cacheVersion,
+    rmpToken: TOKEN,
+    RATINGS: kv,
+    RATE_LIMITS: { getByName: () => ({ check: async () => "ok" as const }) },
+  };
 }
 
 function item(overrides: Partial<RatingRequestItem> = {}): RatingRequestItem {
@@ -113,7 +119,10 @@ async function post(items: RatingRequestItem[], env: Env) {
   return worker.fetch(
     new Request("https://ratings.example/v1/ratings", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        [CLIENT_ID_HEADER]: "11111111-1111-4111-8111-111111111111",
+      },
       body: JSON.stringify({ items }),
     }),
     env,

@@ -2,7 +2,7 @@
 name = "red-storm-prof-ratings"
 main = "src/index.ts"
 compatibility_date = "2026-10-26"
-workers_dev = false
+workers_dev = true
 
 [vars]
 cacheVersion = 1
@@ -11,3 +11,14 @@ cacheVersion = 1
 # The namespace id is added when the namespace is created. This task does not create it.
 [[kv_namespaces]]
 binding = "RATINGS"
+id = "e7a67d03011646d7bb0349032c1d5e84"
+
+# SQLite-backed so the free plan can create it. The counter itself stays in memory.
+# https://developers.cloudflare.com/durable-objects/platform/pricing/
+[[durable_objects.bindings]]
+name = "RATE_LIMITS"
+class_name = "RateLimits"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimits"]

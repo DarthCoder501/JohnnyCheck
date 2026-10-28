@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SCHOOL_IDS, parseRatingsResponse, type RatingRequestItem } from "../../shared/src/contract";
+import { CLIENT_ID_HEADER, SCHOOL_IDS, parseRatingsResponse, type RatingRequestItem } from "../../shared/src/contract";
 import worker, { type Env } from "../src/index";
 import { resetSurnameIsolate } from "../src/rmp";
 
@@ -46,7 +46,12 @@ function fakeCache() {
 }
 
 function envFor(kv: ReturnType<typeof countingKv>, cacheVersion = 1): Env {
-  return { cacheVersion, rmpToken: TOKEN, RATINGS: kv };
+  return {
+    cacheVersion,
+    rmpToken: TOKEN,
+    RATINGS: kv,
+    RATE_LIMITS: { getByName: () => ({ check: async () => "ok" as const }) },
+  };
 }
 
 function item(overrides: Partial<RatingRequestItem> = {}): RatingRequestItem {
@@ -79,7 +84,10 @@ function post(body: unknown, env: Env) {
   return worker.fetch(
     new Request("https://ratings.example/v1/ratings", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        [CLIENT_ID_HEADER]: "11111111-1111-4111-8111-111111111111",
+      },
       body: JSON.stringify(body),
     }),
     env,

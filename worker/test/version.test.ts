@@ -11,6 +11,7 @@ const env = {
     },
     async put() {},
   },
+  RATE_LIMITS: { getByName: () => ({ check: async () => "ok" as const }) },
 };
 
 function call(path: string, method = "GET", cacheVersion = env.cacheVersion) {

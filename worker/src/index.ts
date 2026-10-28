@@ -1,14 +1,14 @@
 import { API_PATHS } from "../../shared/src/contract";
-import { handleCachedRatings } from "./edge";
-import { type Env } from "./ratings";
+import { handleLimitedRatings, RateLimits, type Env } from "./limits";
 
 export type { Env };
+export { RateLimits };
 
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === API_PATHS.ratings) {
-      return handleCachedRatings(request, env);
+      return handleLimitedRatings(request, env);
     }
     if (request.method === "GET" && url.pathname === API_PATHS.version) {
       return Response.json({ cacheVersion: env.cacheVersion });
