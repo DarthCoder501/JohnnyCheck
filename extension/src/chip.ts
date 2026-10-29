@@ -37,6 +37,13 @@ function stopRowEvent(event: Event): void {
   event.stopPropagation();
 }
 
+function isChip(node: ChildNode): node is HTMLElement {
+  return (
+    node.nodeType === ELEMENT_NODE &&
+    (node as Element).getAttribute("class")?.split(/\s+/).includes("rspr-chip") === true
+  );
+}
+
 function brAfter(anchor: Element): ChildNode | null {
   let node: ChildNode | null = anchor.nextSibling;
   while (node !== null) {
@@ -98,6 +105,11 @@ export function paintInstructorCell(cell: HTMLElement, paints: readonly ChipPain
     if (paint === undefined || anchor === undefined || anchor.parentNode === null) continue;
     const br = brAfter(anchor);
     if (br === null) continue;
+    const next = br.nextSibling;
+    if (next !== null && isChip(next)) {
+      chips.push(next);
+      continue;
+    }
     const person = (anchor.textContent ?? "").replace(/\s+/g, " ").trim();
     const chip = createChip(anchor.ownerDocument, person, paint);
     anchor.parentNode.insertBefore(chip, br.nextSibling);
