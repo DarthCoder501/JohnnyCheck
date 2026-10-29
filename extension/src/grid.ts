@@ -81,21 +81,34 @@ export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMe
 }
 
 /** One frame per burst. Banner replaces the results subtree and fills instructor HTML after the cells. */
-export function observeGrid(parent: Element, cacheVersion: number, view: ViewHost): void {
+export function observeGrid(
+  parent: Element,
+  cacheVersion: number,
+  view: ViewHost,
+): { disconnect(): void } {
   let frame: number | null = null;
+  let stopped = false;
   const scan = () => {
     frame = null;
+    if (stopped) return;
     scanGrid(parent, cacheVersion);
   };
   const schedule = () => {
-    if (frame !== null) return;
+    if (stopped || frame !== null) return;
     frame = view.requestAnimationFrame(scan);
   };
-  new view.MutationObserver(schedule).observe(parent, {
+  const observer = new view.MutationObserver(schedule);
+  observer.observe(parent, {
     attributes: true,
     childList: true,
     characterData: true,
     subtree: true,
   });
   schedule();
+  return {
+    disconnect() {
+      stopped = true;
+      observer.disconnect();
+    },
+  };
 }
