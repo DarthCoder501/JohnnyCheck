@@ -11,12 +11,14 @@
     "typecheck:worker": "tsc -p worker/tsconfig.json",
     "typecheck:extension": "tsc -p extension/tsconfig.json",
     "build:extension": "node extension/build.mjs",
+    "test:e2e": "node extension/build.mjs && playwright test",
     "dev:worker": "wrangler dev --config worker/wrangler.toml",
     "deploy:worker": "wrangler deploy --config worker/wrangler.toml",
     "package": "node scripts/package.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261021.1",
+    "@playwright/test": "1.64.1",
     "@types/chrome": "0.3.6",
     "esbuild": "0.28.2",
     "happy-dom": "21.0.4",

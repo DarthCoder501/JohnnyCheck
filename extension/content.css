@@ -1,0 +1,43 @@
+.rspr-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 24px;
+  margin: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #222222;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+  text-decoration: none;
+}
+a.rspr-chip {
+  cursor: pointer;
+  text-decoration: underline;
+}
+.rspr-chip:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+.rspr-mark {
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  background: #148280;
+  transform: rotate(45deg);
+}
+td.rspr-open {
+  height: auto;
+  max-height: none;
+}
+@media (forced-colors: active) {
+  .rspr-mark {
+    background: CanvasText;
+    border: 1px solid CanvasText;
+  }
+}

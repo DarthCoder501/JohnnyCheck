@@ -1,0 +1,52 @@
+html,
+body {
+  box-sizing: border-box;
+  width: 320px;
+  margin: 0;
+  padding: 16px;
+  background: #ffffff;
+  color: #222222;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.rspr-popup-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  color: #151618;
+  font-size: 14px;
+  font-weight: 600;
+}
+.rspr-popup-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.rspr-popup-toggle input {
+  accent-color: #222222;
+  width: 44px;
+  height: 24px;
+}
+.rspr-popup a {
+  color: #000000;
+  text-decoration: underline;
+}
+.rspr-mark {
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  background: #148280;
+  transform: rotate(45deg);
+}
+@media (forced-colors: active) {
+  .rspr-mark {
+    background: CanvasText;
+    border: 1px solid CanvasText;
+  }
+}
