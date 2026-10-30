@@ -104,6 +104,7 @@ export function observeGrid(
   view: ViewHost,
   local?: LocalRatings,
   deliver?: (message: RatingsQueryMessage) => void,
+  wake?: () => void,
 ): { disconnect(): void; applyReply(reply: RatingsQueryReply): void } {
   let frame: number | null = null;
   let stopped = false;
@@ -114,7 +115,7 @@ export function observeGrid(
     if (stopped) return;
     const mine = ++pass;
     const slots = collectSlots(parent, cacheVersion);
-    void paintSlots(slots, local, deliver, () => stopped || mine !== pass).then((next) => {
+    void paintSlots(slots, local, deliver, () => stopped || mine !== pass, wake).then((next) => {
       if (stopped || mine !== pass) return;
       pending = next;
     });

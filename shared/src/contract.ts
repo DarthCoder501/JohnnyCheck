@@ -65,7 +65,7 @@ export function rmpProfileUrl(legacyId: number): string {
 
 export const TTL_RATED_SECONDS = 7 * 24 * 60 * 60;
 export const TTL_SHORT_SECONDS = 24 * 60 * 60;
-export const VERSION_CHECK_INTERVAL_MS = 15 * 60 * 1000;
+export const VERSION_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const SURNAME_PAGE_SIZE = 100;
 export const MAX_PAGES_PER_SURNAME_SCHOOL = 2;
 export const UPSTREAM_CONCURRENCY = 6;

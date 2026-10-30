@@ -1,10 +1,8 @@
 import { ENABLED_DEFAULT, STORAGE_AREAS, STORAGE_KEYS } from "../../shared/src/contract";
 import { observeGrid, type RatingsQueryMessage, type RatingsQueryReply, type ViewHost } from "./grid";
-import { pageDeliver, pageLocal, type LocalRatings } from "./paint";
+import { pageDeliver, pageLocal, pageWake, type LocalRatings } from "./paint";
 
 const CLASS_SEARCH_PORT = "8103";
-// shortcut: cacheVersion stays 1 until extension-version reads storage
-const CACHE_VERSION = 1;
 
 export interface StorageChange {
   newValue?: unknown;
@@ -45,6 +43,7 @@ export function runContentScript(
   sync?: SyncListen,
   local?: LocalRatings,
   deliver?: (message: RatingsQueryMessage) => void,
+  wake?: () => void,
 ): ContentSession | null {
   if (port !== CLASS_SEARCH_PORT) return null;
   const parent = doc.getElementById("searchResultsParent");
@@ -54,40 +53,72 @@ export function runContentScript(
 
   let watch: { disconnect(): void; applyReply(reply: RatingsQueryReply): void } | null = null;
   let readDone = false;
+  let cacheVersion = 1;
+  let showing = false;
 
   const clearChips = () => {
     for (const chip of parent.querySelectorAll(".rspr-chip")) chip.remove();
   };
+  const stop = () => {
+    watch?.disconnect();
+    watch = null;
+    clearChips();
+  };
   const start = () => {
-    if (watch !== null) return;
-    watch = observeGrid(parent, CACHE_VERSION, host, local, deliver);
+    if (watch !== null || !showing) return;
+    watch = observeGrid(parent, cacheVersion, host, local, deliver, wake);
   };
   const applyEnabled = (on: boolean) => {
+    showing = on;
     if (on) start();
-    else {
-      watch?.disconnect();
-      watch = null;
-      clearChips();
-    }
+    else stop();
   };
   const settle = (on: boolean) => {
     if (readDone) return;
     readDone = true;
     applyEnabled(on);
   };
+  const useVersion = (next: number) => {
+    if (next === cacheVersion) return;
+    cacheVersion = next;
+    const on = showing;
+    stop();
+    if (on) {
+      showing = true;
+      start();
+    }
+  };
 
-  if (sync === undefined) start();
-  else {
+  const listen = sync !== undefined;
+  if (listen) {
     sync.onChanged.addListener((changes, areaName) => {
-      if (areaName !== STORAGE_AREAS.enabled) return;
-      const change = changes[STORAGE_KEYS.enabled];
-      if (change === undefined) return;
-      readDone = true;
-      applyEnabled(enabledValue(change.newValue));
+      if (areaName === STORAGE_AREAS.enabled) {
+        const change = changes[STORAGE_KEYS.enabled];
+        if (change === undefined) return;
+        readDone = true;
+        applyEnabled(enabledValue(change.newValue));
+        return;
+      }
+      if (areaName !== STORAGE_AREAS.cacheVersion) return;
+      const next = changes[STORAGE_KEYS.cacheVersion]?.newValue;
+      if (typeof next === "number" && next >= 0) useVersion(next);
     });
-    void sync.get(STORAGE_KEYS.enabled).then(
-      (stored) => settle(enabledValue(stored[STORAGE_KEYS.enabled])),
-      () => settle(ENABLED_DEFAULT),
+  }
+  if (sync === undefined && local === undefined) {
+    showing = true;
+    start();
+  } else {
+    const empty = (): { [key: string]: unknown } => ({});
+    void Promise.all([
+      sync?.get(STORAGE_KEYS.enabled) ?? Promise.resolve(empty()),
+      local?.get([STORAGE_KEYS.cacheVersion]) ?? Promise.resolve(empty()),
+    ]).then(
+      ([enabledStored, versionStored]) => {
+        const storedVersion = versionStored[STORAGE_KEYS.cacheVersion];
+        if (typeof storedVersion === "number" && storedVersion >= 0) cacheVersion = storedVersion;
+        settle(sync === undefined ? true : enabledValue(enabledStored[STORAGE_KEYS.enabled]));
+      },
+      () => settle(sync === undefined ? true : ENABLED_DEFAULT),
     );
   }
 
@@ -123,6 +154,7 @@ if (page !== undefined) {
       pageSync(),
       pageLocal(),
       pageDeliver((reply) => session?.applyReply(reply)),
+      pageWake(),
     );
   }
 }

@@ -41,6 +41,7 @@ export async function paintSlots(
   local: LocalRatings | undefined,
   deliver: ((message: { items: RatingRequestItem[] }) => void) | undefined,
   stale: () => boolean,
+  wake?: () => void,
 ): Promise<Map<string, Paintable[]>> {
   if (stale()) return new Map();
   const keys = [...new Set(slots.map((slot) => slot.key))];
@@ -71,6 +72,7 @@ export async function paintSlots(
     misses.push(slot.item);
   }
   if (misses.length > 0 && deliver !== undefined) deliver({ items: misses });
+  if (!stale()) wake?.();
   return pending;
 }
 
@@ -102,6 +104,14 @@ export function pageLocal(): LocalRatings | undefined {
   return {
     get: (keys) => area.get([...keys]),
     set: (items) => area.set(items),
+  };
+}
+
+/** Asks the service worker to check `/v1/version` without waiting on the paint. */
+export function pageWake(): (() => void) | undefined {
+  if (typeof chrome === "undefined" || chrome.runtime?.sendMessage === undefined) return undefined;
+  return () => {
+    void chrome.runtime.sendMessage({ checkVersion: true });
   };
 }
 
