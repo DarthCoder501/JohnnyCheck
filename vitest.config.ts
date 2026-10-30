@@ -1,5 +1,8 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig, configDefaults } from "vitest/config";
 import { fileURLToPath } from "node:url";
+
+// Posts to the deployed worker. `npm test` skips it. Naming the file on the command includes it.
+const liveFetch = process.argv.some((arg) => arg.includes("extension/test/fetch.test.ts"));
 
 export default defineConfig({
   resolve: {
@@ -13,6 +16,9 @@ export default defineConfig({
       "worker/test/**/*.test.ts",
       "extension/test/**/*.test.ts",
     ],
+    exclude: liveFetch
+      ? [...configDefaults.exclude]
+      : [...configDefaults.exclude, "extension/test/fetch.test.ts"],
     environment: "node",
   },
 });

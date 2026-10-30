@@ -6,6 +6,9 @@
   "action": {
     "default_popup": "popup.html"
   },
+  "background": {
+    "service_worker": "dist/service-worker.js"
+  },
   "permissions": ["storage"],
   "host_permissions": [
     "https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*",

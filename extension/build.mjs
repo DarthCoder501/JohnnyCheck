@@ -13,6 +13,7 @@ await esbuild.build({
   entryPoints: {
     popup: "extension/src/popup.ts",
     "content-script": "extension/src/content-script.ts",
+    "service-worker": "extension/src/service-worker.ts",
   },
   outdir: "extension/dist",
 });

@@ -56,6 +56,7 @@ describe("extension scaffold", () => {
     const source = [
       readFileSync(new URL("../manifest.json", import.meta.url), "utf8"),
       readFileSync(new URL("../src/content-script.ts", import.meta.url), "utf8"),
+      readFileSync(new URL("../src/service-worker.ts", import.meta.url), "utf8"),
     ].join("\n");
     expect(source).not.toMatch(/rmpToken|Bearer /);
   });
