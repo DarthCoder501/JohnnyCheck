@@ -1,10 +1,26 @@
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
-import { STORAGE_KEYS } from "../../shared/src/contract";
+import { STORAGE_KEYS, type RatedResult } from "../../shared/src/contract";
+import { localCacheKey } from "../../shared/src/keys";
+import { parseInstructor } from "../../shared/src/names";
 import { runContentScript, type SyncListen } from "../src/content-script";
-import { type RatingsQueryReply } from "../src/grid";
 
-const REPLY: RatingsQueryReply = { cacheVersion: 1, results: {} };
+function rated(): RatedResult {
+  return {
+    status: "rated",
+    match: "exact",
+    reasons: ["initial"],
+    legacyId: 4242,
+    rmpName: "Geoffrey Dick",
+    department: "Computer Science",
+    schoolName: "Queens",
+    numRatings: 28,
+    quality: 4.5,
+    difficulty: null,
+    wouldTakeAgain: null,
+    ttlSeconds: 60,
+  };
+}
 
 function instructorHtml(name: string): string {
   return `<a class="email instructor-contact-link" href="mailto:secret@example.edu">${name}</a> (Primary)<br>`;
@@ -85,13 +101,18 @@ describe("extension toggle", () => {
     const window = mount("Geoffrey Norman Dick");
     const area = memorySync(true);
     const session = await painted(window, area);
-    for (const chip of chips(window)) chip.remove();
-    session.applyReply(REPLY);
-    expect(chips(window)).toHaveLength(1);
+    const parsed = parseInstructor("Geoffrey Norman Dick");
+    if (parsed === null) throw new Error("name did not parse");
+    const reply = {
+      cacheVersion: 1,
+      results: { [localCacheKey(1, null, null, parsed)]: rated() },
+    };
+    session.applyReply(reply);
+    expect(chips(window)[0]?.textContent).toContain("4.5");
 
     area.emit("sync", false);
     expect(chips(window)).toHaveLength(0);
-    session.applyReply(REPLY);
+    session.applyReply(reply);
     expect(chips(window)).toHaveLength(0);
   });
 

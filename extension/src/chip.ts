@@ -96,23 +96,49 @@ function instructorAnchors(cell: HTMLElement): Element[] {
   return anchors;
 }
 
-export function paintInstructorCell(cell: HTMLElement, paints: readonly ChipPaint[]): HTMLElement[] {
-  const anchors = instructorAnchors(cell);
+function anchorAt(cell: HTMLElement, index: number): { anchor: Element; br: ChildNode } | null {
+  const anchor = instructorAnchors(cell)[index];
+  if (anchor === undefined || anchor.parentNode === null) return null;
+  const br = brAfter(anchor);
+  if (br === null) return null;
+  return { anchor, br };
+}
+
+export function canPaintInstructor(cell: HTMLElement, index: number): boolean {
+  return anchorAt(cell, index) !== null;
+}
+
+export function instructorChip(cell: HTMLElement, index: number): HTMLElement | null {
+  const place = anchorAt(cell, index);
+  if (place === null) return null;
+  const next = place.br.nextSibling;
+  return next !== null && isChip(next) ? next : null;
+}
+
+export function paintInstructorCell(
+  cell: HTMLElement,
+  paints: readonly ChipPaint[],
+  refresh = false,
+): HTMLElement[] {
   const chips: HTMLElement[] = [];
-  for (let index = 0; index < anchors.length; index += 1) {
+  for (let index = 0; index < paints.length; index += 1) {
     const paint = paints[index];
-    const anchor = anchors[index];
-    if (paint === undefined || anchor === undefined || anchor.parentNode === null) continue;
-    const br = brAfter(anchor);
-    if (br === null) continue;
-    const next = br.nextSibling;
+    const place = anchorAt(cell, index);
+    if (paint === undefined || place === null) continue;
+    const next = place.br.nextSibling;
+    const person = (place.anchor.textContent ?? "").replace(/\s+/g, " ").trim();
     if (next !== null && isChip(next)) {
-      chips.push(next);
+      if (!refresh) {
+        chips.push(next);
+        continue;
+      }
+      const chip = createChip(place.anchor.ownerDocument, person, paint);
+      next.replaceWith(chip);
+      chips.push(chip);
       continue;
     }
-    const person = (anchor.textContent ?? "").replace(/\s+/g, " ").trim();
-    const chip = createChip(anchor.ownerDocument, person, paint);
-    anchor.parentNode.insertBefore(chip, br.nextSibling);
+    const chip = createChip(place.anchor.ownerDocument, person, paint);
+    place.anchor.parentNode?.insertBefore(chip, place.br.nextSibling);
     chips.push(chip);
   }
   return chips;

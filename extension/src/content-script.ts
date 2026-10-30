@@ -1,5 +1,6 @@
 import { ENABLED_DEFAULT, STORAGE_AREAS, STORAGE_KEYS } from "../../shared/src/contract";
-import { observeGrid, scanGrid, type RatingsQueryReply, type ViewHost } from "./grid";
+import { observeGrid, type RatingsQueryMessage, type RatingsQueryReply, type ViewHost } from "./grid";
+import { pageDeliver, pageLocal, type LocalRatings } from "./paint";
 
 const CLASS_SEARCH_PORT = "8103";
 // shortcut: cacheVersion stays 1 until extension-version reads storage
@@ -42,6 +43,8 @@ export function runContentScript(
   port: string,
   view?: ViewHost,
   sync?: SyncListen,
+  local?: LocalRatings,
+  deliver?: (message: RatingsQueryMessage) => void,
 ): ContentSession | null {
   if (port !== CLASS_SEARCH_PORT) return null;
   const parent = doc.getElementById("searchResultsParent");
@@ -49,7 +52,7 @@ export function runContentScript(
   const host = view ?? viewHost(doc.defaultView);
   if (host === null) return null;
 
-  let watch: { disconnect(): void } | null = null;
+  let watch: { disconnect(): void; applyReply(reply: RatingsQueryReply): void } | null = null;
   let readDone = false;
 
   const clearChips = () => {
@@ -57,7 +60,7 @@ export function runContentScript(
   };
   const start = () => {
     if (watch !== null) return;
-    watch = observeGrid(parent, CACHE_VERSION, host);
+    watch = observeGrid(parent, CACHE_VERSION, host, local, deliver);
   };
   const applyEnabled = (on: boolean) => {
     if (on) start();
@@ -90,9 +93,7 @@ export function runContentScript(
 
   return {
     applyReply(reply) {
-      // shortcut: the score text is extension-paint; this only blocks a reply after off
-      if (watch === null || reply.cacheVersion !== CACHE_VERSION) return;
-      scanGrid(parent, CACHE_VERSION);
+      watch?.applyReply(reply);
     },
   };
 }
@@ -113,5 +114,15 @@ function pageSync(): SyncListen | undefined {
 const page = globalThis.document;
 if (page !== undefined) {
   const host = viewHost(globalThis);
-  if (host !== null) runContentScript(page, globalThis.location.port, host, pageSync());
+  if (host !== null) {
+    let session: ContentSession | null = null;
+    session = runContentScript(
+      page,
+      globalThis.location.port,
+      host,
+      pageSync(),
+      pageLocal(),
+      pageDeliver((reply) => session?.applyReply(reply)),
+    );
+  }
 }

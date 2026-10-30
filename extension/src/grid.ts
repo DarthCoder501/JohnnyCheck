@@ -1,7 +1,8 @@
 import { type RatingRequestItem, type RatingsResponse } from "../../shared/src/contract";
 import { localCacheKey } from "../../shared/src/keys";
 import { instructorTextsFromCell, parseInstructor, type InstructorCellNode } from "../../shared/src/names";
-import { paintInstructorCell } from "./chip";
+import { canPaintInstructor, instructorChip, paintInstructorCell, type ChipPaint } from "./chip";
+import { paintReply, paintSlots, type LocalRatings, type Paintable } from "./paint";
 
 /** Content script to service worker. The service worker answers with `RatingsQueryReply`. */
 export interface RatingsQueryMessage {
@@ -40,10 +41,8 @@ function columnText(cell: Element | null): string | null {
   return text.trim() === "" ? null : text;
 }
 
-/** Loading diamonds for real names, plus the request the service worker will answer. No fetch. */
-export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMessage {
-  const items: RatingRequestItem[] = [];
-  const seen = new Set<string>();
+function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
+  const slots: Paintable[] = [];
   for (const table of root.querySelectorAll(GRID_SELECTOR)) {
     const headers = [...table.querySelectorAll(":scope > thead > tr > th")];
     const keyed = table.querySelector("[data-property]") !== null;
@@ -54,12 +53,8 @@ export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMe
     for (const row of table.querySelectorAll(':scope > tbody > tr[role="row"]')) {
       const instructor = columnCell(row, headers, "instructor", "instructor", keyed);
       if (instructor === null) continue;
-      const names = instructorTextsFromCell(instructor as unknown as InstructorCellNode);
-      if (names.length === 0) continue;
-      const chips = paintInstructorCell(
-        instructor as HTMLElement,
-        names.map(() => "loading"),
-      );
+      const cell = instructor as HTMLElement;
+      const names = instructorTextsFromCell(cell as unknown as InstructorCellNode);
       const campus = columnText(columnCell(row, headers, "campus", "campus", keyed));
       const subject = columnText(
         columnCell(row, headers, "subjectDescription", "subject description", keyed),
@@ -67,15 +62,37 @@ export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMe
       for (let index = 0; index < names.length; index += 1) {
         const name = names[index];
         // shortcut: plain text has no anchor or br, so it is not requested
-        if (name === undefined || chips[index] === undefined) continue;
+        if (name === undefined || !canPaintInstructor(cell, index)) continue;
         const parsed = parseInstructor(name);
         if (parsed === null) continue;
         const key = localCacheKey(cacheVersion, campus, subject, parsed);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        items.push({ key, name, campus, subject });
+        const item: RatingRequestItem = { key, name, campus, subject };
+        slots.push({
+          key,
+          item,
+          cell,
+          hasChip: () => instructorChip(cell, index) !== null,
+          show(paint: ChipPaint, refresh?: boolean) {
+            const paints: ChipPaint[] = [];
+            paints[index] = paint;
+            paintInstructorCell(cell, paints, refresh === true);
+          },
+        });
       }
     }
+  }
+  return slots;
+}
+
+/** Loading diamonds for real names, plus the request the service worker will answer. No fetch. */
+export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMessage {
+  const items: RatingRequestItem[] = [];
+  const seen = new Set<string>();
+  for (const slot of collectSlots(root, cacheVersion)) {
+    slot.show("loading");
+    if (seen.has(slot.key)) continue;
+    seen.add(slot.key);
+    items.push(slot.item);
   }
   return { items };
 }
@@ -85,13 +102,22 @@ export function observeGrid(
   parent: Element,
   cacheVersion: number,
   view: ViewHost,
-): { disconnect(): void } {
+  local?: LocalRatings,
+  deliver?: (message: RatingsQueryMessage) => void,
+): { disconnect(): void; applyReply(reply: RatingsQueryReply): void } {
   let frame: number | null = null;
   let stopped = false;
+  let pass = 0;
+  let pending = new Map<string, Paintable[]>();
   const scan = () => {
     frame = null;
     if (stopped) return;
-    scanGrid(parent, cacheVersion);
+    const mine = ++pass;
+    const slots = collectSlots(parent, cacheVersion);
+    void paintSlots(slots, local, deliver, () => stopped || mine !== pass).then((next) => {
+      if (stopped || mine !== pass) return;
+      pending = next;
+    });
   };
   const schedule = () => {
     if (stopped || frame !== null) return;
@@ -109,6 +135,10 @@ export function observeGrid(
     disconnect() {
       stopped = true;
       observer.disconnect();
+    },
+    applyReply(reply) {
+      if (stopped) return;
+      paintReply(reply, cacheVersion, pending, local, Date.now());
     },
   };
 }
