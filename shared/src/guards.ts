@@ -18,6 +18,13 @@ export function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-export function isBoundedString(value: unknown, maxLength: number): value is string {
-  return typeof value === "string" && value.trim() !== "" && value.length <= maxLength;
+export function isBoundedString(
+  value: unknown,
+  maxLength: number,
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim() !== "" &&
+    value.length <= maxLength
+  );
 }

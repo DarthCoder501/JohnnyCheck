@@ -3,13 +3,16 @@ import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
 import { runContentScript } from "../src/content-script";
 
-const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8")) as {
+const manifest = JSON.parse(
+  readFileSync(new URL("../manifest.json", import.meta.url), "utf8"),
+) as {
   permissions: string[];
   host_permissions: string[];
   content_scripts: { matches: string[] }[];
 };
 
-const BANNER = "https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*";
+const BANNER =
+  "https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*";
 const WORKER = "https://red-storm-prof-ratings.johnnycheck.workers.dev/*";
 
 function page(port: string, html: string) {
@@ -30,7 +33,10 @@ function paint(port: string, html: string) {
 
 describe("extension scaffold", () => {
   it("declares storage and the two hosts, with no port and no broad permissions", () => {
-    const text = readFileSync(new URL("../manifest.json", import.meta.url), "utf8");
+    const text = readFileSync(
+      new URL("../manifest.json", import.meta.url),
+      "utf8",
+    );
     expect(text).not.toContain(":8103");
     expect(text).not.toContain("<all_urls>");
     expect(manifest.permissions).toEqual(["storage"]);
@@ -49,14 +55,23 @@ describe("extension scaffold", () => {
   });
 
   it("does not add a chip when class search only has #table1", () => {
-    paint("8103", `<div id="searchResultsParent"><table id="table1"></table></div>`);
+    paint(
+      "8103",
+      `<div id="searchResultsParent"><table id="table1"></table></div>`,
+    );
   });
 
   it("ships no Rate My Professors token", () => {
     const source = [
       readFileSync(new URL("../manifest.json", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/content-script.ts", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/service-worker.ts", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../src/content-script.ts", import.meta.url),
+        "utf8",
+      ),
+      readFileSync(
+        new URL("../src/service-worker.ts", import.meta.url),
+        "utf8",
+      ),
     ].join("\n");
     expect(source).not.toMatch(/rmpToken|Bearer /);
   });

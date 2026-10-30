@@ -1,16 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Red Storm Professor Ratings</title>
-<link rel="stylesheet" href="popup.css">
-</head>
-<body class="rspr-popup">
-<h1 class="rspr-popup-title"><span class="rspr-mark" aria-hidden="true"></span>Red Storm Professor Ratings</h1>
-<p>Unofficial. Not affiliated with St. John's University, Rate My Professors, or Ellucian.</p>
-<label class="rspr-popup-toggle"><input id="show-ratings" type="checkbox" checked>Show ratings</label>
-<!-- shortcut: no matching-note page, both links open the privacy policy until that page exists -->
-<p><a href="https://red-storm-prof-ratings.johnnycheck.workers.dev/privacy" target="_blank" rel="noopener noreferrer">Privacy</a> <a href="https://red-storm-prof-ratings.johnnycheck.workers.dev/privacy" target="_blank" rel="noopener noreferrer">How a name is matched</a></p>
-<script src="dist/popup.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Red Storm Professor Ratings</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="rspr-popup">
+    <h1 class="rspr-popup-title">
+      <span class="rspr-mark" aria-hidden="true"></span>Red Storm Professor
+      Ratings
+    </h1>
+    <p class="rspr-disclaimer">
+      Unofficial. Not affiliated with St. John's University, Rate My Professors,
+      or Ellucian.
+    </p>
+    <label class="rspr-popup-toggle">
+      <span>Show Ratings</span>
+      <span class="rspr-switch">
+        <input id="show-ratings" type="checkbox" checked />
+        <span class="rspr-on">On</span>
+        <span class="rspr-off">Off</span>
+      </span>
+    </label>
+    <p class="rspr-popup-links">
+      <a
+        href="https://red-storm-prof-ratings.johnnycheck.workers.dev/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Privacy →</a
+      >
+    </p>
+    <script src="dist/popup.js"></script>
+  </body>
 </html>

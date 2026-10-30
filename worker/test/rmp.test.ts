@@ -36,12 +36,19 @@ function node(overrides: Record<string, unknown> = {}) {
     avgRating: 4.5,
     avgDifficulty: 3.1,
     wouldTakeAgainPercent: 80,
-    school: { name: "St. John's University - Jamaica/Queens", legacyId: SCHOOL_IDS.queens },
+    school: {
+      name: "St. John's University - Jamaica/Queens",
+      legacyId: SCHOOL_IDS.queens,
+    },
     ...overrides,
   };
 }
 
-function page(nodes: Record<string, unknown>[], hasNextPage: boolean, endCursor: string | null) {
+function page(
+  nodes: Record<string, unknown>[],
+  hasNextPage: boolean,
+  endCursor: string | null,
+) {
   return new Response(
     JSON.stringify({
       data: {
@@ -98,7 +105,13 @@ describe("surname search", () => {
     const fetchImpl = vi.fn(async () => page([node()], false, null));
     fetchImpl
       .mockResolvedValueOnce(page([node({ legacyId: 1 })], true, "cursor-2"))
-      .mockResolvedValueOnce(page([node({ legacyId: 2, avgRating: 3.2, numRatings: 4 })], true, "cursor-3"));
+      .mockResolvedValueOnce(
+        page(
+          [node({ legacyId: 2, avgRating: 3.2, numRatings: 4 })],
+          true,
+          "cursor-3",
+        ),
+      );
 
     const result = await search("Ann Smith", fetchImpl);
 
@@ -118,21 +131,36 @@ describe("surname search", () => {
     });
     expect(calls[1]?.body.variables.cursor).toBe("cursor-2");
     expect(calls[1]?.body.variables.query.text).toBe("Smith");
-    expect(result).toMatchObject({ status: "rated", match: "possible", legacyId: 1, reasons: ["same_name"] });
+    expect(result).toMatchObject({
+      status: "rated",
+      match: "possible",
+      legacyId: 1,
+      reasons: ["same_name"],
+    });
   });
 
   it("returns the page-two teacher when page one is other people with that surname", async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(
-        page([node({ legacyId: 7, firstName: "Robert", lastName: "Smith" })], true, "next"),
+        page(
+          [node({ legacyId: 7, firstName: "Robert", lastName: "Smith" })],
+          true,
+          "next",
+        ),
       )
       .mockResolvedValueOnce(page([node({ legacyId: 9 })], false, null));
 
     const result = await search("Ann Smith", fetchImpl);
 
     expect(callsOf(fetchImpl)).toHaveLength(2);
-    expect(result).toMatchObject({ status: "rated", match: "exact", legacyId: 9, quality: 4.5, numRatings: 28 });
+    expect(result).toMatchObject({
+      status: "rated",
+      match: "exact",
+      legacyId: 9,
+      quality: 4.5,
+      numRatings: 28,
+    });
   });
 
   it("turns a still-truncated miss into unavailable and does not query the final token", async () => {
@@ -140,10 +168,9 @@ describe("surname search", () => {
 
     const result = await search("Thanh Van Nguyen", fetchImpl);
 
-    expect(callsOf(fetchImpl).map((call) => call.body.variables.query.text)).toEqual([
-      "Van Nguyen",
-      "Van Nguyen",
-    ]);
+    expect(
+      callsOf(fetchImpl).map((call) => call.body.variables.query.text),
+    ).toEqual(["Van Nguyen", "Van Nguyen"]);
     expect(result).toEqual(unavailableResult());
     expect(toStoredRating(result, 0)).toBeNull();
   });
@@ -151,14 +178,34 @@ describe("surname search", () => {
   it("queries the final token only after the full family finished with no last-name hit", async () => {
     const fetchImpl = vi
       .fn()
-      .mockResolvedValueOnce(page([node({ legacyId: 3, firstName: "Ada", lastName: "Lee" })], false, null))
       .mockResolvedValueOnce(
-        page([node({ legacyId: 11, firstName: "Thanh", lastName: "Nguyen", avgRating: 3.2, numRatings: 6 })], false, null),
+        page(
+          [node({ legacyId: 3, firstName: "Ada", lastName: "Lee" })],
+          false,
+          null,
+        ),
+      )
+      .mockResolvedValueOnce(
+        page(
+          [
+            node({
+              legacyId: 11,
+              firstName: "Thanh",
+              lastName: "Nguyen",
+              avgRating: 3.2,
+              numRatings: 6,
+            }),
+          ],
+          false,
+          null,
+        ),
       );
 
     const result = await search("Thanh Van Nguyen", fetchImpl);
 
-    expect(callsOf(fetchImpl).map((call) => call.body.variables.query.text)).toEqual(["Van Nguyen", "Nguyen"]);
+    expect(
+      callsOf(fetchImpl).map((call) => call.body.variables.query.text),
+    ).toEqual(["Van Nguyen", "Nguyen"]);
     expect(result).toMatchObject({
       status: "rated",
       match: "possible",
@@ -170,20 +217,38 @@ describe("surname search", () => {
 
   it("does not query the final token when the full family already had a last-name hit", async () => {
     const fetchImpl = vi.fn(async () =>
-      page([node({ legacyId: 4, firstName: "Mina", lastName: "Van Nguyen" })], false, null),
+      page(
+        [node({ legacyId: 4, firstName: "Mina", lastName: "Van Nguyen" })],
+        false,
+        null,
+      ),
     );
 
     const result = await search("Thanh Van Nguyen", fetchImpl);
 
-    expect(callsOf(fetchImpl).map((call) => call.body.variables.query.text)).toEqual(["Van Nguyen"]);
+    expect(
+      callsOf(fetchImpl).map((call) => call.body.variables.query.text),
+    ).toEqual(["Van Nguyen"]);
     expect(result).toMatchObject({ status: "not_listed" });
-    expect(toStoredRating(result, 0)?.result).toMatchObject({ status: "not_listed" });
+    expect(toStoredRating(result, 0)?.result).toMatchObject({
+      status: "not_listed",
+    });
   });
 
   it("treats HTTP 403 and an HTML body as unavailable for five minutes", async () => {
     const forbidden = vi.fn(async () => new Response("no", { status: 403 }));
-    const first = await search("Ann Smith", forbidden, SCHOOL_IDS.queens, 1_000);
-    const during = await search("Robert Lee", forbidden, SCHOOL_IDS.queens, 1_000 + 60_000);
+    const first = await search(
+      "Ann Smith",
+      forbidden,
+      SCHOOL_IDS.queens,
+      1_000,
+    );
+    const during = await search(
+      "Robert Lee",
+      forbidden,
+      SCHOOL_IDS.queens,
+      1_000 + 60_000,
+    );
     expect(first).toEqual(unavailableResult());
     expect(toStoredRating(first, 1_000)).toBeNull();
     expect(forbidden).toHaveBeenCalledTimes(1);
@@ -191,11 +256,25 @@ describe("surname search", () => {
 
     resetSurnameIsolate();
     const html = vi.fn(
-      async () => new Response("<html>challenge</html>", { status: 200, headers: { "content-type": "text/html" } }),
+      async () =>
+        new Response("<html>challenge</html>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        }),
     );
     const blocked = await search("Ann Smith", html, SCHOOL_IDS.queens, 5_000);
-    const still = await search("Ann Smith", html, SCHOOL_IDS.queens, 5_000 + 5 * 60 * 1000 - 1);
-    const after = await search("Ann Smith", html, SCHOOL_IDS.queens, 5_000 + 5 * 60 * 1000);
+    const still = await search(
+      "Ann Smith",
+      html,
+      SCHOOL_IDS.queens,
+      5_000 + 5 * 60 * 1000 - 1,
+    );
+    const after = await search(
+      "Ann Smith",
+      html,
+      SCHOOL_IDS.queens,
+      5_000 + 5 * 60 * 1000,
+    );
     expect(blocked).toEqual(unavailableResult());
     expect(toStoredRating(blocked, 5_000)).toBeNull();
     expect(html).toHaveBeenCalledTimes(2);
@@ -215,12 +294,28 @@ describe("surname search", () => {
       maxInflight = Math.max(maxInflight, inflight);
       await gate;
       inflight -= 1;
-      return page([node(), node({ legacyId: 8, firstName: "Jane", lastName: "Smith", avgRating: 2, numRatings: 3 })], false, null);
+      return page(
+        [
+          node(),
+          node({
+            legacyId: 8,
+            firstName: "Jane",
+            lastName: "Smith",
+            avgRating: 2,
+            numRatings: 3,
+          }),
+        ],
+        false,
+        null,
+      );
     });
 
-    const shared = Promise.all([search("Ann Smith", fetchImpl), search("Jane Smith", fetchImpl)]);
-    const others = ["Lee", "Chen", "Kim", "Patel", "Johnson", "Garcia"].map((family) =>
-      search(`Ann ${family}`, fetchImpl),
+    const shared = Promise.all([
+      search("Ann Smith", fetchImpl),
+      search("Jane Smith", fetchImpl),
+    ]);
+    const others = ["Lee", "Chen", "Kim", "Patel", "Johnson", "Garcia"].map(
+      (family) => search(`Ann ${family}`, fetchImpl),
     );
     await vi.waitUntil(() => maxInflight === 6);
     expect(inflight).toBe(6);
@@ -236,7 +331,11 @@ describe("surname search", () => {
   it("treats a GraphQL body without data as unavailable without the five-minute block", async () => {
     const fetchImpl = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ errors: [{ message: "nope" }] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ errors: [{ message: "nope" }] }), {
+          status: 200,
+        }),
+      )
       .mockResolvedValueOnce(page([node({ legacyId: 15 })], false, null));
 
     const missed = await search("Ann Smith", fetchImpl, SCHOOL_IDS.queens, 0);

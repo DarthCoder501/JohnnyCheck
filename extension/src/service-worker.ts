@@ -107,14 +107,17 @@ async function sendChunk(
     return unavailableFor(items);
   }
   if (response.status !== 200) {
-    console.warn(JSON.stringify({ event: "ratings_fetch", status: response.status }));
+    console.warn(
+      JSON.stringify({ event: "ratings_fetch", status: response.status }),
+    );
     return unavailableFor(items);
   }
   try {
     const parsed = parseRatingsResponse(await response.json());
     if (parsed === null) return unavailableFor(items);
     for (const item of items) {
-      if (parsed.results[item.key] === undefined) parsed.results[item.key] = unavailableResult();
+      if (parsed.results[item.key] === undefined)
+        parsed.results[item.key] = unavailableResult();
     }
     return parsed;
   } catch {
@@ -193,14 +196,19 @@ export function checkVersion(
     }
     let response: Response;
     try {
-      response = await fetchImpl(VERSION_ENDPOINT, { method: "GET", credentials: "omit" });
+      response = await fetchImpl(VERSION_ENDPOINT, {
+        method: "GET",
+        credentials: "omit",
+      });
     } catch {
       console.warn(JSON.stringify({ event: "version_check", status: 0 }));
       return;
     }
     if (response.status !== 200) {
       await stamp(session, nowMs);
-      console.warn(JSON.stringify({ event: "version_check", status: response.status }));
+      console.warn(
+        JSON.stringify({ event: "version_check", status: response.status }),
+      );
       return;
     }
     let parsed: { cacheVersion: number } | null;
@@ -228,10 +236,18 @@ export function checkVersion(
       }
       await stamp(session, nowMs);
     } catch {
-      console.warn(JSON.stringify({ event: "version_check", status: "storage" }));
+      console.warn(
+        JSON.stringify({ event: "version_check", status: "storage" }),
+      );
       return;
     }
-    console.log(JSON.stringify({ event: "version_check", cacheVersion: parsed.cacheVersion, flushed }));
+    console.log(
+      JSON.stringify({
+        event: "version_check",
+        cacheVersion: parsed.cacheVersion,
+        flushed,
+      }),
+    );
   })().finally(() => {
     if (versionInflight === run) versionInflight = null;
   });
@@ -241,7 +257,12 @@ export function checkVersion(
 
 function isItem(value: unknown): value is RatingRequestItem {
   if (typeof value !== "object" || value === null) return false;
-  const item = value as { key?: unknown; name?: unknown; campus?: unknown; subject?: unknown };
+  const item = value as {
+    key?: unknown;
+    name?: unknown;
+    campus?: unknown;
+    subject?: unknown;
+  };
   return (
     typeof item.key === "string" &&
     typeof item.name === "string" &&
@@ -251,7 +272,8 @@ function isItem(value: unknown): value is RatingRequestItem {
 }
 
 function itemsFrom(message: unknown): RatingRequestItem[] | null {
-  if (typeof message !== "object" || message === null || !("items" in message)) return null;
+  if (typeof message !== "object" || message === null || !("items" in message))
+    return null;
   const { items } = message;
   if (!Array.isArray(items) || !items.every(isItem)) return null;
   return items;
@@ -266,18 +288,33 @@ function storedArea(area: chrome.storage.StorageArea): Area {
 }
 
 function isVersionCheck(message: unknown): boolean {
-  return typeof message === "object" && message !== null && "checkVersion" in message && message.checkVersion === true;
+  return (
+    typeof message === "object" &&
+    message !== null &&
+    "checkVersion" in message &&
+    message.checkVersion === true
+  );
 }
 
 function listen(): void {
   const local = chrome.storage?.local;
   const session = chrome.storage?.session;
-  if (chrome.runtime?.onMessage === undefined || local === undefined || session === undefined) return;
+  if (
+    chrome.runtime?.onMessage === undefined ||
+    local === undefined ||
+    session === undefined
+  )
+    return;
   // Chrome drops this worker after 30 idle seconds, so the 429 minute lives in session storage.
   // shortcut: a fetch that takes longer than 30s is killed with the worker, upgrade if a cold batch exceeds that
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (isVersionCheck(message)) {
-      void checkVersion(storedArea(local), storedArea(session), globalThis.fetch, Date.now());
+      void checkVersion(
+        storedArea(local),
+        storedArea(session),
+        globalThis.fetch,
+        Date.now(),
+      );
       return;
     }
     const items = itemsFrom(message);

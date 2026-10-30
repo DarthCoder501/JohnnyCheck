@@ -7,17 +7,30 @@ export interface CampusResolution {
   schools: readonly number[];
 }
 
-function resolution(known: boolean, schools: readonly number[]): CampusResolution {
+function resolution(
+  known: boolean,
+  schools: readonly number[],
+): CampusResolution {
   return Object.freeze({ known, schools: Object.freeze([...schools]) });
 }
 
 const QUEENS = resolution(true, [SCHOOL_IDS.queens, SCHOOL_IDS.generic]);
-const STATEN_ISLAND = resolution(true, [SCHOOL_IDS.statenIsland, SCHOOL_IDS.queens, SCHOOL_IDS.generic]);
-const MANHATTAN = resolution(true, [SCHOOL_IDS.manhattan, SCHOOL_IDS.queens, SCHOOL_IDS.generic]);
+const STATEN_ISLAND = resolution(true, [
+  SCHOOL_IDS.statenIsland,
+  SCHOOL_IDS.queens,
+  SCHOOL_IDS.generic,
+]);
+const MANHATTAN = resolution(true, [
+  SCHOOL_IDS.manhattan,
+  SCHOOL_IDS.queens,
+  SCHOOL_IDS.generic,
+]);
 const UNKNOWN = resolution(false, ALL_SCHOOL_IDS);
 
 /** `Online Learning`, a hidden campus, and any other text search all four listings. Staten Island is not on the 2026-10-26 picker. A leftover Staten Island string still resolves below. */
-export function resolveCampus(text: string | null | undefined): CampusResolution {
+export function resolveCampus(
+  text: string | null | undefined,
+): CampusResolution {
   if (text == null) {
     return UNKNOWN;
   }

@@ -21,11 +21,16 @@ export function batchSizeFor(campusText: string | null | undefined): number {
 
 /** A request is capped at the smallest campus size in it. */
 export function batchLimit(items: readonly CampusCarrier[]): number {
-  return items.reduce((limit, item) => Math.min(limit, batchSizeFor(item.campus)), batchSizeFor("Queens"));
+  return items.reduce(
+    (limit, item) => Math.min(limit, batchSizeFor(item.campus)),
+    batchSizeFor("Queens"),
+  );
 }
 
 /** Items that share a batch size travel together, in page order. */
-export function chunkRequestItems<T extends CampusCarrier>(items: readonly T[]): T[][] {
+export function chunkRequestItems<T extends CampusCarrier>(
+  items: readonly T[],
+): T[][] {
   const chunks: T[][] = [];
   const openChunks = new Map<number, T[]>();
   for (const item of items) {
@@ -48,7 +53,10 @@ export type RatingsRequestParse =
   | { ok: true; request: RatingsRequest }
   | { ok: false; error: string };
 
-function parseOptionalText(value: unknown, maxLength: number): string | null | undefined {
+function parseOptionalText(
+  value: unknown,
+  maxLength: number,
+): string | null | undefined {
   if (value === null || value === undefined) {
     return null;
   }
@@ -87,13 +95,20 @@ export function parseRatingsRequest(body: unknown): RatingsRequestParse {
   }
   const maxBatch = batchSizeFor("Queens");
   if (body.items.length > maxBatch) {
-    return { ok: false, error: `At most ${maxBatch} items fit in one request.` };
+    return {
+      ok: false,
+      error: `At most ${maxBatch} items fit in one request.`,
+    };
   }
   const items: RatingRequestItem[] = [];
   for (const value of body.items) {
     const item = parseItem(value);
     if (!item) {
-      return { ok: false, error: "Each item needs a key and name string plus campus and subject (string or null)." };
+      return {
+        ok: false,
+        error:
+          "Each item needs a key and name string plus campus and subject (string or null).",
+      };
     }
     items.push(item);
   }

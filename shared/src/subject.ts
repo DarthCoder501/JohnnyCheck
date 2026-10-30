@@ -2,7 +2,19 @@ import { cleanText, foldDiacritics } from "./normalize";
 
 const COLLEGE_CODE_SUFFIX = /\s+[-\u2013\u2014]\s+[\p{L}&.]{2,6}$/u;
 
-const STOPWORDS: ReadonlySet<string> = new Set(["a", "an", "and", "amp", "for", "in", "of", "on", "the", "to", "with"]);
+const STOPWORDS: ReadonlySet<string> = new Set([
+  "a",
+  "an",
+  "and",
+  "amp",
+  "for",
+  "in",
+  "of",
+  "on",
+  "the",
+  "to",
+  "with",
+]);
 
 const GENERIC_TOKENS: ReadonlySet<string> = new Set([
   "science",
@@ -71,11 +83,15 @@ const UMBRELLA_DEPARTMENTS: ReadonlySet<string> = new Set([
  * Lowercased, punctuation-free subject text with a trailing college code dropped:
  * `COMPUTER SCIENCE - CCPS` becomes `computer science`, `PHARMACY - PHARMD` becomes `pharmacy`.
  */
-export function normalizeSubject(text: string | null | undefined): string | null {
+export function normalizeSubject(
+  text: string | null | undefined,
+): string | null {
   if (text == null) {
     return null;
   }
-  const normalized = foldDiacritics(cleanText(text).replace(COLLEGE_CODE_SUFFIX, ""))
+  const normalized = foldDiacritics(
+    cleanText(text).replace(COLLEGE_CODE_SUFFIX, ""),
+  )
     .toLowerCase()
     .replace(/&/g, " and ")
     .replace(/['’ʼ`.]/g, "")
@@ -116,7 +132,9 @@ export function subjectTokens(text: string | null | undefined): string[] {
 }
 
 /** Departments such as `Business` or `Arts & Sciences` that cover too much to contradict a subject. */
-export function isUmbrellaDepartment(department: string | null | undefined): boolean {
+export function isUmbrellaDepartment(
+  department: string | null | undefined,
+): boolean {
   const normalized = normalizeSubject(department);
   if (normalized === null) {
     return false;
@@ -128,9 +146,13 @@ export function isUmbrellaDepartment(department: string | null | undefined): boo
   return UMBRELLA_DEPARTMENTS.has(phrase);
 }
 
-export function subjectOverlap(subject: string | null | undefined, department: string | null | undefined): number {
+export function subjectOverlap(
+  subject: string | null | undefined,
+  department: string | null | undefined,
+): number {
   const departmentTokens = new Set(subjectTokens(department));
-  return subjectTokens(subject).filter((token) => departmentTokens.has(token)).length;
+  return subjectTokens(subject).filter((token) => departmentTokens.has(token))
+    .length;
 }
 
 export type SubjectAgreement = "match" | "conflict" | "unknown";
@@ -144,9 +166,15 @@ export function compareSubject(
   subject: string | null | undefined,
   department: string | null | undefined,
 ): SubjectComparison {
-  if (subjectTokens(subject).length === 0 || isUmbrellaDepartment(department) || subjectTokens(department).length === 0) {
+  if (
+    subjectTokens(subject).length === 0 ||
+    isUmbrellaDepartment(department) ||
+    subjectTokens(department).length === 0
+  ) {
     return { agreement: "unknown", overlap: 0 };
   }
   const overlap = subjectOverlap(subject, department);
-  return overlap > 0 ? { agreement: "match", overlap } : { agreement: "conflict", overlap: 0 };
+  return overlap > 0
+    ? { agreement: "match", overlap }
+    : { agreement: "conflict", overlap: 0 };
 }

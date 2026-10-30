@@ -15,7 +15,12 @@ function visibleLabel(paint: ChipPaint): string {
 }
 
 function accessibleName(person: string, paint: ChipPaint): string | null {
-  if (paint === "loading" || paint.status === "not_listed" || paint.status === "unavailable") return null;
+  if (
+    paint === "loading" ||
+    paint.status === "not_listed" ||
+    paint.status === "unavailable"
+  )
+    return null;
   const tail =
     paint.status === "unrated"
       ? "no ratings yet"
@@ -25,8 +30,13 @@ function accessibleName(person: string, paint: ChipPaint): string | null {
   return `${person}, Rate My Professors, ${tail}`;
 }
 
-function isProfile(paint: ChipPaint): paint is Extract<RatingResult, { legacyId: number }> {
-  return paint !== "loading" && (paint.status === "rated" || paint.status === "unrated");
+function isProfile(
+  paint: ChipPaint,
+): paint is Extract<RatingResult, { legacyId: number }> {
+  return (
+    paint !== "loading" &&
+    (paint.status === "rated" || paint.status === "unrated")
+  );
 }
 
 function stopRowEvent(event: Event): void {
@@ -40,7 +50,10 @@ function stopRowEvent(event: Event): void {
 function isChip(node: ChildNode): node is HTMLElement {
   return (
     node.nodeType === ELEMENT_NODE &&
-    (node as Element).getAttribute("class")?.split(/\s+/).includes("rspr-chip") === true
+    (node as Element)
+      .getAttribute("class")
+      ?.split(/\s+/)
+      .includes("rspr-chip") === true
   );
 }
 
@@ -57,7 +70,11 @@ function brAfter(anchor: Element): ChildNode | null {
   return null;
 }
 
-function createChip(doc: Document, person: string, paint: ChipPaint): HTMLElement {
+function createChip(
+  doc: Document,
+  person: string,
+  paint: ChipPaint,
+): HTMLElement {
   const profile = isProfile(paint);
   const chip = doc.createElement(profile ? "a" : "span");
   chip.className = "rspr-chip";
@@ -67,7 +84,8 @@ function createChip(doc: Document, person: string, paint: ChipPaint): HTMLElemen
   chip.append(mark);
   const label = visibleLabel(paint);
   if (label !== "") chip.append(doc.createTextNode(label));
-  const name = paint === "loading" ? "Loading ratings" : accessibleName(person, paint);
+  const name =
+    paint === "loading" ? "Loading ratings" : accessibleName(person, paint);
   if (name !== null) {
     chip.setAttribute("aria-label", name);
     if (profile) chip.setAttribute("title", name);
@@ -86,7 +104,8 @@ function createChip(doc: Document, person: string, paint: ChipPaint): HTMLElemen
 function instructorAnchors(cell: HTMLElement): Element[] {
   const anchors: Element[] = [];
   for (const node of cell.childNodes) {
-    if (node.nodeType !== ELEMENT_NODE || node.nodeName.toUpperCase() !== "A") continue;
+    if (node.nodeType !== ELEMENT_NODE || node.nodeName.toUpperCase() !== "A")
+      continue;
     const anchor = node as Element;
     const className = anchor.getAttribute("class") ?? "";
     if (!className.split(/\s+/).includes("instructor-contact-link")) continue;
@@ -96,7 +115,10 @@ function instructorAnchors(cell: HTMLElement): Element[] {
   return anchors;
 }
 
-function anchorAt(cell: HTMLElement, index: number): { anchor: Element; br: ChildNode } | null {
+function anchorAt(
+  cell: HTMLElement,
+  index: number,
+): { anchor: Element; br: ChildNode } | null {
   const anchor = instructorAnchors(cell)[index];
   if (anchor === undefined || anchor.parentNode === null) return null;
   const br = brAfter(anchor);
@@ -108,7 +130,10 @@ export function canPaintInstructor(cell: HTMLElement, index: number): boolean {
   return anchorAt(cell, index) !== null;
 }
 
-export function instructorChip(cell: HTMLElement, index: number): HTMLElement | null {
+export function instructorChip(
+  cell: HTMLElement,
+  index: number,
+): HTMLElement | null {
   const place = anchorAt(cell, index);
   if (place === null) return null;
   const next = place.br.nextSibling;

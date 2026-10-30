@@ -85,11 +85,17 @@ function clientKey(request: Request): string | null {
   return raw.toLowerCase();
 }
 
-export async function handleLimitedRatings(request: Request, env: Env): Promise<Response> {
+export async function handleLimitedRatings(
+  request: Request,
+  env: Env,
+): Promise<Response> {
   const ip = request.headers.get("CF-Connecting-IP") ?? "";
   let decision: LimitDecision;
   try {
-    decision = await env.RATE_LIMITS.getByName("ratings").check(ip, clientKey(request));
+    decision = await env.RATE_LIMITS.getByName("ratings").check(
+      ip,
+      clientKey(request),
+    );
   } catch (error) {
     console.warn(
       JSON.stringify({
@@ -100,12 +106,19 @@ export async function handleLimitedRatings(request: Request, env: Env): Promise<
     return new Response(null, { status: 429 });
   }
   if (decision === "ip" || decision === "client") {
-    console.log(JSON.stringify({ event: "ratings_limited", ceiling: decision }));
+    console.log(
+      JSON.stringify({ event: "ratings_limited", ceiling: decision }),
+    );
     return new Response(null, { status: 429 });
   }
   if (decision === "bad_client") {
-    console.log(JSON.stringify({ event: "ratings_rejected", reason: "client_id" }));
-    return Response.json({ error: "X-Client-ID must be a UUID." }, { status: 400 });
+    console.log(
+      JSON.stringify({ event: "ratings_rejected", reason: "client_id" }),
+    );
+    return Response.json(
+      { error: "X-Client-ID must be a UUID." },
+      { status: 400 },
+    );
   }
   return handleCachedRatings(request, env);
 }

@@ -1,5 +1,14 @@
-import { ENABLED_DEFAULT, STORAGE_AREAS, STORAGE_KEYS } from "../../shared/src/contract";
-import { observeGrid, type RatingsQueryMessage, type RatingsQueryReply, type ViewHost } from "./grid";
+import {
+  ENABLED_DEFAULT,
+  STORAGE_AREAS,
+  STORAGE_KEYS,
+} from "../../shared/src/contract";
+import {
+  observeGrid,
+  type RatingsQueryMessage,
+  type RatingsQueryReply,
+  type ViewHost,
+} from "./grid";
 import { pageDeliver, pageLocal, pageWake, type LocalRatings } from "./paint";
 
 const CLASS_SEARCH_PORT = "8103";
@@ -13,7 +22,10 @@ export interface SyncListen {
   get(key: string): Promise<{ [key: string]: unknown }>;
   onChanged: {
     addListener(
-      listener: (changes: { [key: string]: StorageChange }, areaName: string) => void,
+      listener: (
+        changes: { [key: string]: StorageChange },
+        areaName: string,
+      ) => void,
     ): void;
   };
 }
@@ -23,12 +35,17 @@ export interface ContentSession {
 }
 
 function isElement(value: unknown): value is Element {
-  return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as Node).nodeType === 1
+  );
 }
 
 function viewHost(value: unknown): ViewHost | null {
   if (typeof value !== "object" || value === null) return null;
-  if (!("requestAnimationFrame" in value) || !("MutationObserver" in value)) return null;
+  if (!("requestAnimationFrame" in value) || !("MutationObserver" in value))
+    return null;
   return value as ViewHost;
 }
 
@@ -51,7 +68,10 @@ export function runContentScript(
   const host = view ?? viewHost(doc.defaultView);
   if (host === null) return null;
 
-  let watch: { disconnect(): void; applyReply(reply: RatingsQueryReply): void } | null = null;
+  let watch: {
+    disconnect(): void;
+    applyReply(reply: RatingsQueryReply): void;
+  } | null = null;
   let readDone = false;
   let cacheVersion = 1;
   let showing = false;
@@ -115,8 +135,13 @@ export function runContentScript(
     ]).then(
       ([enabledStored, versionStored]) => {
         const storedVersion = versionStored[STORAGE_KEYS.cacheVersion];
-        if (typeof storedVersion === "number" && storedVersion >= 0) cacheVersion = storedVersion;
-        settle(sync === undefined ? true : enabledValue(enabledStored[STORAGE_KEYS.enabled]));
+        if (typeof storedVersion === "number" && storedVersion >= 0)
+          cacheVersion = storedVersion;
+        settle(
+          sync === undefined
+            ? true
+            : enabledValue(enabledStored[STORAGE_KEYS.enabled]),
+        );
       },
       () => settle(sync === undefined ? true : ENABLED_DEFAULT),
     );
@@ -130,7 +155,8 @@ export function runContentScript(
 }
 
 function pageSync(): SyncListen | undefined {
-  if (typeof chrome === "undefined" || chrome.storage === undefined) return undefined;
+  if (typeof chrome === "undefined" || chrome.storage === undefined)
+    return undefined;
   const { sync, onChanged } = chrome.storage;
   return {
     get: (key) => sync.get(key),

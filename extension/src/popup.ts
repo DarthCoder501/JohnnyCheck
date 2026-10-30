@@ -25,6 +25,10 @@ export function bindPopup(doc: Document, area: SyncArea): Promise<void> {
 }
 
 const page = globalThis.document;
-if (page !== undefined && typeof chrome !== "undefined" && chrome.storage?.sync !== undefined) {
+if (
+  page !== undefined &&
+  typeof chrome !== "undefined" &&
+  chrome.storage?.sync !== undefined
+) {
   void bindPopup(page, chrome.storage.sync);
 }

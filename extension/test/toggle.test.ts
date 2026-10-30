@@ -50,7 +50,10 @@ function memorySync(enabled: boolean | undefined): MemorySync {
   const values: { [key: string]: unknown } = {};
   if (enabled !== undefined) values[STORAGE_KEYS.enabled] = enabled;
   const listeners: Array<
-    (changes: { [key: string]: { newValue?: unknown } }, areaName: string) => void
+    (
+      changes: { [key: string]: { newValue?: unknown } },
+      areaName: string,
+    ) => void
   > = [];
   return {
     get: (key) => Promise.resolve({ [key]: values[key] }),
@@ -86,7 +89,9 @@ describe("extension toggle", () => {
     area.emit("local", false);
     expect(chips(window)).toHaveLength(1);
 
-    const cell = window.document.querySelector("td[data-property='instructor']");
+    const cell = window.document.querySelector(
+      "td[data-property='instructor']",
+    );
     if (cell === null) throw new Error("cell missing");
     cell.setAttribute("data-pass", "edit");
     area.emit("sync", false);

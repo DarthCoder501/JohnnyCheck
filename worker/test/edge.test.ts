@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CLIENT_ID_HEADER, SCHOOL_IDS, parseRatingsResponse, type RatingRequestItem } from "../../shared/src/contract";
+import {
+  CLIENT_ID_HEADER,
+  SCHOOL_IDS,
+  parseRatingsResponse,
+  type RatingRequestItem,
+} from "../../shared/src/contract";
 import worker, { type Env } from "../src/index";
 import { resetSurnameIsolate } from "../src/rmp";
 
@@ -32,7 +37,9 @@ function fakeCache() {
   const puts: string[] = [];
   const cache = {
     async match(request: RequestInfo) {
-      const hit = rows.get(request instanceof Request ? request.url : String(request));
+      const hit = rows.get(
+        request instanceof Request ? request.url : String(request),
+      );
       return hit?.clone();
     },
     async put(request: RequestInfo, response: Response) {
@@ -111,16 +118,23 @@ describe("POST /v1/ratings colo cache", () => {
             avgRating: 4.5,
             avgDifficulty: 3.1,
             wouldTakeAgainPercent: 80,
-            school: { name: "St. John's University - Jamaica/Queens", legacyId: SCHOOL_IDS.queens },
+            school: {
+              name: "St. John's University - Jamaica/Queens",
+              legacyId: SCHOOL_IDS.queens,
+            },
           },
         ]),
       ),
     );
     const env = envFor(kv);
 
-    const first = parseRatingsResponse(await (await post({ items: [item()] }, env)).json());
+    const first = parseRatingsResponse(
+      await (await post({ items: [item()] }, env)).json(),
+    );
     const getsAfterFirst = kv.gets;
-    const second = parseRatingsResponse(await (await post({ items: [item()] }, env)).json());
+    const second = parseRatingsResponse(
+      await (await post({ items: [item()] }, env)).json(),
+    );
 
     expect(first?.results.row).toMatchObject({ status: "rated", legacyId: 42 });
     expect(second).toEqual(first);
@@ -160,7 +174,10 @@ describe("POST /v1/ratings colo cache", () => {
             avgRating: 4.5,
             avgDifficulty: 3.1,
             wouldTakeAgainPercent: 80,
-            school: { name: "St. John's University - Jamaica/Queens", legacyId: SCHOOL_IDS.queens },
+            school: {
+              name: "St. John's University - Jamaica/Queens",
+              legacyId: SCHOOL_IDS.queens,
+            },
           },
         ]),
       ),
@@ -168,7 +185,9 @@ describe("POST /v1/ratings colo cache", () => {
 
     await post({ items: [item()] }, envFor(kv, 1));
     const getsAfterFirst = kv.gets;
-    const bumped = parseRatingsResponse(await (await post({ items: [item()] }, envFor(kv, 2))).json());
+    const bumped = parseRatingsResponse(
+      await (await post({ items: [item()] }, envFor(kv, 2))).json(),
+    );
 
     expect(bumped?.cacheVersion).toBe(2);
     expect(kv.gets).toBeGreaterThan(getsAfterFirst);
@@ -179,10 +198,15 @@ describe("POST /v1/ratings colo cache", () => {
   it("does not store a 200 whose result is unavailable", async () => {
     const kv = countingKv();
     const cache = fakeCache();
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 403 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("no", { status: 403 })),
+    );
     const env = envFor(kv);
 
-    const blocked = parseRatingsResponse(await (await post({ items: [item()] }, env)).json());
+    const blocked = parseRatingsResponse(
+      await (await post({ items: [item()] }, env)).json(),
+    );
     const getsAfterFirst = kv.gets;
     await post({ items: [item()] }, env);
 

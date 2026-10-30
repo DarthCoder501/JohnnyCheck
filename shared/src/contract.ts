@@ -29,7 +29,8 @@ export const ALL_SCHOOL_IDS: readonly SchoolLegacyId[] = Object.freeze([
   SCHOOL_IDS.generic,
 ]);
 
-const BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 function base64Ascii(text: string): string {
   let output = "";
@@ -52,12 +53,13 @@ export function schoolGraphqlId(legacyId: number): string {
   return base64Ascii(`School-${legacyId}`);
 }
 
-export const SCHOOL_GRAPHQL_IDS: Readonly<Record<SchoolLegacyId, string>> = Object.freeze({
-  [SCHOOL_IDS.queens]: schoolGraphqlId(SCHOOL_IDS.queens),
-  [SCHOOL_IDS.statenIsland]: schoolGraphqlId(SCHOOL_IDS.statenIsland),
-  [SCHOOL_IDS.manhattan]: schoolGraphqlId(SCHOOL_IDS.manhattan),
-  [SCHOOL_IDS.generic]: schoolGraphqlId(SCHOOL_IDS.generic),
-});
+export const SCHOOL_GRAPHQL_IDS: Readonly<Record<SchoolLegacyId, string>> =
+  Object.freeze({
+    [SCHOOL_IDS.queens]: schoolGraphqlId(SCHOOL_IDS.queens),
+    [SCHOOL_IDS.statenIsland]: schoolGraphqlId(SCHOOL_IDS.statenIsland),
+    [SCHOOL_IDS.manhattan]: schoolGraphqlId(SCHOOL_IDS.manhattan),
+    [SCHOOL_IDS.generic]: schoolGraphqlId(SCHOOL_IDS.generic),
+  });
 
 export function rmpProfileUrl(legacyId: number): string {
   return `https://www.ratemyprofessors.com/professor/${legacyId}`;
@@ -134,7 +136,11 @@ export interface UnavailableResult {
   status: "unavailable";
 }
 
-export type RatingResult = RatedResult | UnratedResult | NotListedResult | UnavailableResult;
+export type RatingResult =
+  | RatedResult
+  | UnratedResult
+  | NotListedResult
+  | UnavailableResult;
 export type RatingStatus = RatingResult["status"];
 export type CacheableRatingResult = Exclude<RatingResult, UnavailableResult>;
 export type MatchedRatingResult = RatedResult | UnratedResult;
@@ -190,11 +196,16 @@ export function unavailableResult(): UnavailableResult {
   return { status: "unavailable" };
 }
 
-export function isCacheable(result: RatingResult): result is CacheableRatingResult {
+export function isCacheable(
+  result: RatingResult,
+): result is CacheableRatingResult {
   return result.status !== "unavailable";
 }
 
-export function toStoredRating(result: RatingResult, nowMs: number): StoredRating | null {
+export function toStoredRating(
+  result: RatingResult,
+  nowMs: number,
+): StoredRating | null {
   if (!isCacheable(result) || !isRatingResult(result)) {
     return null;
   }
@@ -225,8 +236,13 @@ const EXACT_FORBIDDEN_REASONS: ReadonlySet<string> = new Set([
   "same_name",
 ]);
 
-function countAgrees(status: "rated" | "unrated", numRatings: unknown): boolean {
-  return status === "rated" ? isNonNegativeInteger(numRatings) && numRatings > 0 : numRatings === 0;
+function countAgrees(
+  status: "rated" | "unrated",
+  numRatings: unknown,
+): boolean {
+  return status === "rated"
+    ? isNonNegativeInteger(numRatings) && numRatings > 0
+    : numRatings === 0;
 }
 
 /**
@@ -260,13 +276,22 @@ export function isRatingResult(value: unknown): value is RatingResult {
         return false;
       }
       if (value.match === "exact" && Array.isArray(value.reasons)) {
-        if (value.reasons.some((reason) => typeof reason === "string" && EXACT_FORBIDDEN_REASONS.has(reason))) {
+        if (
+          value.reasons.some(
+            (reason) =>
+              typeof reason === "string" && EXACT_FORBIDDEN_REASONS.has(reason),
+          )
+        ) {
           return false;
         }
       }
       return value.status === "rated"
-        ? isFiniteNumber(value.quality) && isNullableNumber(value.difficulty) && isNullableNumber(value.wouldTakeAgain)
-        : value.quality === null && value.difficulty === null && value.wouldTakeAgain === null;
+        ? isFiniteNumber(value.quality) &&
+            isNullableNumber(value.difficulty) &&
+            isNullableNumber(value.wouldTakeAgain)
+        : value.quality === null &&
+            value.difficulty === null &&
+            value.wouldTakeAgain === null;
     }
     default:
       return false;
@@ -275,11 +300,17 @@ export function isRatingResult(value: unknown): value is RatingResult {
 
 /** Drops individual results that fail validation; the caller treats a missing key as unavailable. */
 export function parseRatingsResponse(value: unknown): RatingsResponse | null {
-  if (!isRecord(value) || !isNonNegativeInteger(value.cacheVersion) || !isRecord(value.results)) {
+  if (
+    !isRecord(value) ||
+    !isNonNegativeInteger(value.cacheVersion) ||
+    !isRecord(value.results)
+  ) {
     return null;
   }
   const results = Object.fromEntries(
-    Object.entries(value.results).filter((entry): entry is [string, RatingResult] => isRatingResult(entry[1])),
+    Object.entries(value.results).filter(
+      (entry): entry is [string, RatingResult] => isRatingResult(entry[1]),
+    ),
   );
   return { cacheVersion: value.cacheVersion, results };
 }
@@ -300,6 +331,9 @@ export function isStoredRating(value: unknown): value is StoredRating {
   );
 }
 
-export function isFreshStoredRating(value: unknown, nowMs: number): value is StoredRating {
+export function isFreshStoredRating(
+  value: unknown,
+  nowMs: number,
+): value is StoredRating {
   return isStoredRating(value) && value.expiresAt > nowMs;
 }

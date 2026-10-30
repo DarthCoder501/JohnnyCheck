@@ -10,7 +10,12 @@ const PLACEHOLDER_PHRASES: ReadonlySet<string> = new Set([
   "n/a",
 ]);
 
-const PLACEHOLDER_WORDS: ReadonlySet<string> = new Set(["tba", "tbd", "staff", "faculty"]);
+const PLACEHOLDER_WORDS: ReadonlySet<string> = new Set([
+  "tba",
+  "tbd",
+  "staff",
+  "faculty",
+]);
 
 const BLANK_OR_DASHES = /^[\s\-\u2010-\u2015\u2212]*$/u;
 

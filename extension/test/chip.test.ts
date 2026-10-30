@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
-import { rmpProfileUrl, type RatedResult, type RatingResult } from "../../shared/src/contract";
+import {
+  rmpProfileUrl,
+  type RatedResult,
+  type RatingResult,
+} from "../../shared/src/contract";
 import { paintInstructorCell, type ChipPaint } from "../src/chip";
 
 const CONTENT_CSS = `.rspr-chip {
@@ -49,8 +53,7 @@ td.rspr-open {
 }
 `;
 
-const CAPTURED =
-  `<td data-property="instructor"><a class="email instructor-contact-link" aria-haspopup="true" data-banner-id="REDACTED" data-term="REDACTED" href="mailto:REDACTED">Geoffrey Norman Dick</a> (Primary)<br></td>`;
+const CAPTURED = `<td data-property="instructor"><a class="email instructor-contact-link" aria-haspopup="true" data-banner-id="REDACTED" data-term="REDACTED" href="mailto:REDACTED">Geoffrey Norman Dick</a> (Primary)<br></td>`;
 
 function rated(match: RatedResult["match"], numRatings = 28): RatedResult {
   return {
@@ -73,7 +76,10 @@ function cell(html: string): HTMLElement {
   const window = new Window();
   window.document.body.innerHTML = `<table><tbody><tr>${html}</tr></tbody></table>`;
   const style = window.document.createElement("style");
-  style.textContent = readFileSync(new URL("../content.css", import.meta.url), "utf8");
+  style.textContent = readFileSync(
+    new URL("../content.css", import.meta.url),
+    "utf8",
+  );
   window.document.head.append(style);
   const found = window.document.querySelector("td");
   if (found === null) throw new Error("fixture cell missing");
@@ -88,16 +94,23 @@ function paint(html: string, paints: readonly ChipPaint[]): HTMLElement[] {
 function markFill(chip: HTMLElement): string {
   const mark = chip.querySelector(".rspr-mark");
   if (mark === null) return "";
-  return chip.ownerDocument.defaultView?.getComputedStyle(mark).backgroundColor ?? "";
+  return (
+    chip.ownerDocument.defaultView?.getComputedStyle(mark).backgroundColor ?? ""
+  );
 }
 
 describe("extension chip", () => {
   it("copies content.css and nothing else", () => {
-    const css = readFileSync(new URL("../content.css", import.meta.url), "utf8");
+    const css = readFileSync(
+      new URL("../content.css", import.meta.url),
+      "utf8",
+    );
     expect(css).toBe(CONTENT_CSS);
     expect(css).not.toMatch(/#C12F33|#C64C44|#214A80/);
     expect(css).not.toMatch(/td\.rspr-open\s*\{[^}]*overflow/s);
-    const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8")) as {
+    const manifest = JSON.parse(
+      readFileSync(new URL("../manifest.json", import.meta.url), "utf8"),
+    ) as {
       content_scripts: { css?: string[] }[];
     };
     expect(manifest.content_scripts[0]?.css).toEqual(["content.css"]);
@@ -134,9 +147,11 @@ describe("extension chip", () => {
       expect(chip?.textContent?.trim().startsWith("RMP")).toBe(false);
       expect(chip?.textContent?.replace(/\s+/g, " ").trim()).toBe(state.text);
       expect(chip?.querySelectorAll(".rspr-mark")).toHaveLength(1);
-      if (state.paint === "loading") expect(chip?.getAttribute("aria-label")).toBe("Loading ratings");
+      if (state.paint === "loading")
+        expect(chip?.getAttribute("aria-label")).toBe("Loading ratings");
       expect(markFill(chip!)).toMatch(/rgb\(20,\s*130,\s*128\)|#148280/i);
-      const words = chip?.ownerDocument.defaultView?.getComputedStyle(chip).color ?? "";
+      const words =
+        chip?.ownerDocument.defaultView?.getComputedStyle(chip).color ?? "";
       expect(words).toMatch(/rgb\(34,\s*34,\s*34\)|#222222/i);
     }
     expect(paint("<td></td>", ["loading"])).toEqual([]);
@@ -154,7 +169,9 @@ describe("extension chip", () => {
     expect(profile?.getAttribute("title")).toBe(name);
 
     const possible = paint(CAPTURED, [rated("possible")])[0];
-    expect(possible?.getAttribute("aria-label")).toBe("Geoffrey Norman Dick, Rate My Professors, possible match");
+    expect(possible?.getAttribute("aria-label")).toBe(
+      "Geoffrey Norman Dick, Rate My Professors, possible match",
+    );
 
     const unrated = paint(CAPTURED, [
       {
@@ -173,7 +190,9 @@ describe("extension chip", () => {
       },
     ])[0];
     expect(unrated?.tagName).toBe("A");
-    expect(unrated?.getAttribute("aria-label")).toBe("Geoffrey Norman Dick, Rate My Professors, no ratings yet");
+    expect(unrated?.getAttribute("aria-label")).toBe(
+      "Geoffrey Norman Dick, Rate My Professors, no ratings yet",
+    );
 
     for (const result of [
       { status: "not_listed", ttlSeconds: 1 },
@@ -192,13 +211,18 @@ describe("extension chip", () => {
     );
     const faculty = [...td.querySelectorAll("a.instructor-contact-link")];
     const before = faculty.map((link) => link.outerHTML);
-    const chips = paintInstructorCell(td, [rated("exact"), rated("possible", 4)]);
+    const chips = paintInstructorCell(td, [
+      rated("exact"),
+      rated("possible", 4),
+    ]);
     expect(chips).toHaveLength(2);
     const breaks = [...td.querySelectorAll("br")];
     expect(breaks[0]?.nextSibling).toBe(chips[0]);
     expect(breaks[1]?.nextSibling).toBe(chips[1]);
     expect(faculty.map((link) => link.outerHTML)).toEqual(before);
-    expect(td.querySelector("a.instructor-contact-link")?.getAttribute("href")).toBe("mailto:REDACTED");
+    expect(
+      td.querySelector("a.instructor-contact-link")?.getAttribute("href"),
+    ).toBe("mailto:REDACTED");
     expect(chips[1]?.textContent).toContain("4.5 · 4 possible");
   });
 
@@ -212,25 +236,41 @@ describe("extension chip", () => {
     td.addEventListener("keydown", () => seen.push("keydown"));
     const view = td.ownerDocument.defaultView!;
     for (const type of ["click", "mousedown", "mouseup"] as const) {
-      const event = new view.MouseEvent(type, { bubbles: true, cancelable: true });
+      const event = new view.MouseEvent(type, {
+        bubbles: true,
+        cancelable: true,
+      });
       link?.dispatchEvent(event);
       expect(event.defaultPrevented).toBe(false);
     }
-    const enter = new view.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
-    link?.dispatchEvent(enter);
-    expect(enter.defaultPrevented).toBe(false);
-    expect(link?.tagName).toBe("A");
-    const other = new view.KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true });
-    link?.dispatchEvent(other);
-    expect(seen).toEqual(["keydown"]);
-
-    const plain = cell(CAPTURED);
-    const [span] = paintInstructorCell(plain, [{ status: "not_listed", ttlSeconds: 1 }]);
-    const enterSpan = new plain.ownerDocument.defaultView!.KeyboardEvent("keydown", {
+    const enter = new view.KeyboardEvent("keydown", {
       key: "Enter",
       bubbles: true,
       cancelable: true,
     });
+    link?.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(false);
+    expect(link?.tagName).toBe("A");
+    const other = new view.KeyboardEvent("keydown", {
+      key: "a",
+      bubbles: true,
+      cancelable: true,
+    });
+    link?.dispatchEvent(other);
+    expect(seen).toEqual(["keydown"]);
+
+    const plain = cell(CAPTURED);
+    const [span] = paintInstructorCell(plain, [
+      { status: "not_listed", ttlSeconds: 1 },
+    ]);
+    const enterSpan = new plain.ownerDocument.defaultView!.KeyboardEvent(
+      "keydown",
+      {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      },
+    );
     let followed = false;
     plain.addEventListener("keydown", () => {
       followed = true;

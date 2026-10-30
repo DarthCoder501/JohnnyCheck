@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { chunkRequestItems, parseRatingsRequest, batchSizeFor } from "../src/batch";
-import { ownCampusSchools, primarySchoolKey, resolveCampus } from "../src/campus";
+import {
+  chunkRequestItems,
+  parseRatingsRequest,
+  batchSizeFor,
+} from "../src/batch";
+import {
+  ownCampusSchools,
+  primarySchoolKey,
+  resolveCampus,
+} from "../src/campus";
 import {
   SCHOOL_IDS,
   TTL_RATED_SECONDS,
@@ -15,11 +23,19 @@ import {
   type RatingResult,
 } from "../src/contract";
 import { isRatingKey, localCacheKey, subjectKey } from "../src/keys";
-import { instructorTextsFromCell, parseInstructor, splitInstructorText } from "../src/names";
+import {
+  instructorTextsFromCell,
+  parseInstructor,
+  splitInstructorText,
+} from "../src/names";
 import { areNicknames } from "../src/nicknames";
 import { cleanText, nameKey } from "../src/normalize";
 import { isPlaceholder } from "../src/placeholders";
-import { compareSubject, normalizeSubject, subjectTokens } from "../src/subject";
+import {
+  compareSubject,
+  normalizeSubject,
+  subjectTokens,
+} from "../src/subject";
 
 function rated(overrides: Record<string, unknown> = {}) {
   return {
@@ -70,13 +86,17 @@ describe("instructor names from the Banner capture", () => {
       middleKeys: ["l"],
       family: "Schweikert",
     });
-    expect(parseInstructor("Christina L. Schweikert")).toMatchObject({ middleKeys: ["l"] });
+    expect(parseInstructor("Christina L. Schweikert")).toMatchObject({
+      middleKeys: ["l"],
+    });
     expect(parseInstructor("Puya Ghazizadeh Ph.D.")).toMatchObject({
       given: "Puya",
       middles: [],
       family: "Ghazizadeh",
     });
-    expect(parseInstructor("Puya Ghazizadeh Ph. D.")).toMatchObject({ family: "Ghazizadeh" });
+    expect(parseInstructor("Puya Ghazizadeh Ph. D.")).toMatchObject({
+      family: "Ghazizadeh",
+    });
     expect(parseInstructor("Christopher P. Vogt Ph.D.")).toMatchObject({
       given: "Christopher",
       middles: ["P."],
@@ -87,9 +107,11 @@ describe("instructor names from the Banner capture", () => {
       middles: ["S."],
       family: "Flanagan",
     });
-    expect(parseInstructor("Patrick S. Flanagan C.M. (Primary)")).toMatchObject({
-      family: "Flanagan",
-    });
+    expect(parseInstructor("Patrick S. Flanagan C.M. (Primary)")).toMatchObject(
+      {
+        family: "Flanagan",
+      },
+    );
   });
 
   it("strips other trailing dotted religious and degree suffixes instead of searching them as surnames", () => {
@@ -102,11 +124,23 @@ describe("instructor names from the Banner capture", () => {
       middles: ["S."],
       family: "Flanagan",
     });
-    expect(parseInstructor("Jane Smith R.Ph.")).toMatchObject({ given: "Jane", family: "Smith" });
-    expect(parseInstructor("Jane Smith D.Min.")).toMatchObject({ family: "Smith" });
-    expect(parseInstructor("Jane Smith Pharm.D.")).toMatchObject({ family: "Smith" });
-    expect(parseInstructor("John Smith M.D.")).toMatchObject({ family: "Smith" });
-    expect(parseInstructor("John Smith, Jr.")).toMatchObject({ given: "John", family: "Smith" });
+    expect(parseInstructor("Jane Smith R.Ph.")).toMatchObject({
+      given: "Jane",
+      family: "Smith",
+    });
+    expect(parseInstructor("Jane Smith D.Min.")).toMatchObject({
+      family: "Smith",
+    });
+    expect(parseInstructor("Jane Smith Pharm.D.")).toMatchObject({
+      family: "Smith",
+    });
+    expect(parseInstructor("John Smith M.D.")).toMatchObject({
+      family: "Smith",
+    });
+    expect(parseInstructor("John Smith, Jr.")).toMatchObject({
+      given: "John",
+      family: "Smith",
+    });
     expect(parseInstructor("John A. Smith, Jr. (Primary)")).toMatchObject({
       given: "John",
       middles: ["A."],
@@ -130,14 +164,20 @@ describe("instructor names from the Banner capture", () => {
     expect(cleanText("O&#39;Connor")).toBe("O'Connor");
     expect(cleanText("O&amp;apos;Connor")).toBe("O'Connor");
     expect(cleanText("O&amp;#39;Connor")).toBe("O'Connor");
-    expect(cleanText("DATA SECURITY &amp; CRYPTOGRAPHY")).toBe("DATA SECURITY & CRYPTOGRAPHY");
-    expect(cleanText("ST. JOHN&#39;S UNIVERSITY")).toBe("ST. JOHN'S UNIVERSITY");
+    expect(cleanText("DATA SECURITY &amp; CRYPTOGRAPHY")).toBe(
+      "DATA SECURITY & CRYPTOGRAPHY",
+    );
+    expect(cleanText("ST. JOHN&#39;S UNIVERSITY")).toBe(
+      "ST. JOHN'S UNIVERSITY",
+    );
     expect(parseInstructor("Sean O&#39;Connor")).toMatchObject({
       family: "O'Connor",
       familyKey: "oconnor",
       familyFinalKey: "oconnor",
     });
-    expect(parseInstructor("Sean O&amp;apos;Connor")?.familyKey).toBe("oconnor");
+    expect(parseInstructor("Sean O&amp;apos;Connor")?.familyKey).toBe(
+      "oconnor",
+    );
     expect(nameKey("José García")).toBe(nameKey("Jose Garcia"));
     expect(nameKey("Jørgensen")).toBe("jorgensen");
     expect(nameKey("Łukasz")).toBe("lukasz");
@@ -152,7 +192,10 @@ describe("instructor names from the Banner capture", () => {
       family: "Chen",
       familyKey: "chen",
     });
-    expect(parseInstructor("San Lee")).toMatchObject({ given: "San", family: "Lee" });
+    expect(parseInstructor("San Lee")).toMatchObject({
+      given: "San",
+      family: "Lee",
+    });
     expect(parseInstructor("Maria De La Cruz")).toMatchObject({
       given: "Maria",
       middles: [],
@@ -168,8 +211,13 @@ describe("instructor names from the Banner capture", () => {
       familyFinal: "Nguyen",
       familyFinalKey: "nguyen",
     });
-    expect(parseInstructor("De La Cruz")).toMatchObject({ given: "De", family: "Cruz" });
-    expect(parseInstructor("Maria De Los Santos")).toMatchObject({ family: "De Los Santos" });
+    expect(parseInstructor("De La Cruz")).toMatchObject({
+      given: "De",
+      family: "Cruz",
+    });
+    expect(parseInstructor("Maria De Los Santos")).toMatchObject({
+      family: "De Los Santos",
+    });
     expect(parseInstructor("Van Nguyen, Thanh")).toMatchObject({
       given: "Thanh",
       family: "Van Nguyen",
@@ -182,8 +230,14 @@ describe("instructor names from the Banner capture", () => {
   });
 
   it("does not treat Ma as a degree unless it is dotted or follows a real comma suffix", () => {
-    expect(parseInstructor("John Ma")).toMatchObject({ given: "John", family: "Ma" });
-    expect(parseInstructor("Smith, Ma")).toMatchObject({ given: "Ma", family: "Smith" });
+    expect(parseInstructor("John Ma")).toMatchObject({
+      given: "John",
+      family: "Ma",
+    });
+    expect(parseInstructor("Smith, Ma")).toMatchObject({
+      given: "Ma",
+      family: "Smith",
+    });
     expect(parseInstructor("John Smith, MA")).toMatchObject({
       given: "John",
       middles: [],
@@ -195,33 +249,39 @@ describe("instructor names from the Banner capture", () => {
     expect(splitInstructorText("John A. Smith, Jr. (Primary)")).toEqual([
       "John A. Smith, Jr. (Primary)",
     ]);
-    expect(splitInstructorText("John Smith, Jane Doe")).toEqual(["John Smith, Jane Doe"]);
-    expect(splitInstructorText("John (Jack) Smith")).toEqual(["John (Jack) Smith"]);
-    expect(splitInstructorText("Mary Ann (Annie) Smith")).toEqual(["Mary Ann (Annie) Smith"]);
+    expect(splitInstructorText("John Smith, Jane Doe")).toEqual([
+      "John Smith, Jane Doe",
+    ]);
+    expect(splitInstructorText("John (Jack) Smith")).toEqual([
+      "John (Jack) Smith",
+    ]);
+    expect(splitInstructorText("Mary Ann (Annie) Smith")).toEqual([
+      "Mary Ann (Annie) Smith",
+    ]);
     expect(splitInstructorText("John Smith (Primary) Jane Doe")).toEqual([
       "John Smith (Primary)",
       "Jane Doe",
     ]);
-    expect(splitInstructorText("John Smith (Primary) Jane Doe (Primary)")).toEqual([
-      "John Smith (Primary)",
-      "Jane Doe (Primary)",
-    ]);
+    expect(
+      splitInstructorText("John Smith (Primary) Jane Doe (Primary)"),
+    ).toEqual(["John Smith (Primary)", "Jane Doe (Primary)"]);
     expect(splitInstructorText("Jane Doe\nChristina L Schweikert")).toEqual([
       "Jane Doe",
       "Christina L Schweikert",
     ]);
-    expect(splitInstructorText("Jane Doe\nJohn Smith (Primary)\nChristina L Schweikert")).toEqual([
-      "Jane Doe",
-      "John Smith (Primary)",
-      "Christina L Schweikert",
-    ]);
+    expect(
+      splitInstructorText(
+        "Jane Doe\nJohn Smith (Primary)\nChristina L Schweikert",
+      ),
+    ).toEqual(["Jane Doe", "John Smith (Primary)", "Christina L Schweikert"]);
   });
 
   it("reads each instructor link and leaves the primary marker and other anchors out", () => {
     const coTaught = {
       nodeType: 1,
       nodeName: "TD",
-      textContent: "Jane Doe Geoffrey Norman Dick (Primary)Christina L Schweikert ",
+      textContent:
+        "Jane Doe Geoffrey Norman Dick (Primary)Christina L Schweikert ",
       childNodes: [
         {
           nodeType: 1,
@@ -260,11 +320,11 @@ describe("instructor names from the Banner capture", () => {
       "Geoffrey Norman Dick",
       "Christina L Schweikert",
     ]);
-    expect(instructorTextsFromCell(coTaught).map((name) => parseInstructor(name)?.family)).toEqual([
-      "Doe",
-      "Dick",
-      "Schweikert",
-    ]);
+    expect(
+      instructorTextsFromCell(coTaught).map(
+        (name) => parseInstructor(name)?.family,
+      ),
+    ).toEqual(["Doe", "Dick", "Schweikert"]);
 
     expect(
       instructorTextsFromCell({
@@ -305,7 +365,9 @@ describe("instructor names from the Banner capture", () => {
         nodeType: 1,
         nodeName: "TD",
         textContent: "Joan E. DeBello",
-        childNodes: [{ nodeType: 3, nodeName: "#text", textContent: "Joan E. DeBello" }],
+        childNodes: [
+          { nodeType: 3, nodeName: "#text", textContent: "Joan E. DeBello" },
+        ],
       }),
     ).toEqual(["Joan E. DeBello"]);
   });
@@ -396,7 +458,10 @@ describe("campus and cache keys", () => {
 
     const staten = resolveCampus("Staten Island");
     expect(staten.schools[0]).toBe(SCHOOL_IDS.statenIsland);
-    expect(ownCampusSchools(staten)).toEqual([SCHOOL_IDS.statenIsland, SCHOOL_IDS.generic]);
+    expect(ownCampusSchools(staten)).toEqual([
+      SCHOOL_IDS.statenIsland,
+      SCHOOL_IDS.generic,
+    ]);
     expect(ownCampusSchools(staten)).not.toContain(SCHOOL_IDS.queens);
   });
 
@@ -409,26 +474,35 @@ describe("campus and cache keys", () => {
       return;
     }
 
-    expect(localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joanE)).toBe(
-      "r1:842:computer-science:debello:joan:e",
+    expect(
+      localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joanE),
+    ).toBe("r1:842:computer-science:debello:joan:e");
+    expect(
+      localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - SJC", joanE),
+    ).toBe("r1:842:computer-science:debello:joan:e");
+    expect(
+      localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joanL),
+    ).toBe("r1:842:computer-science:debello:joan:l");
+    expect(
+      localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joan),
+    ).toBe("r1:842:computer-science:debello:joan:_");
+    expect(localCacheKey(1, " Queens Campus", "HISTORY", joanE)).toBe(
+      "r1:842:history:debello:joan:e",
     );
-    expect(localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - SJC", joanE)).toBe(
-      "r1:842:computer-science:debello:joan:e",
+    expect(
+      localCacheKey(1, " Queens Campus", "ACCOUNTING - TOBIN", joanE),
+    ).toBe("r1:842:accounting:debello:joan:e");
+    expect(localCacheKey(1, " Queens Campus", null, joan)).toBe(
+      "r1:842:_:debello:joan:_",
     );
-    expect(localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joanL)).toBe(
-      "r1:842:computer-science:debello:joan:l",
-    );
-    expect(localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", joan)).toBe(
-      "r1:842:computer-science:debello:joan:_",
-    );
-    expect(localCacheKey(1, " Queens Campus", "HISTORY", joanE)).toBe("r1:842:history:debello:joan:e");
-    expect(localCacheKey(1, " Queens Campus", "ACCOUNTING - TOBIN", joanE)).toBe(
-      "r1:842:accounting:debello:joan:e",
-    );
-    expect(localCacheKey(1, " Queens Campus", null, joan)).toBe("r1:842:_:debello:joan:_");
-    expect(localCacheKey(1, "Online Learning", "THEOLOGY", parseInstructor("Patrick S. Flanagan C.M.")!)).toBe(
-      "r1:_:theology:flanagan:patrick:s",
-    );
+    expect(
+      localCacheKey(
+        1,
+        "Online Learning",
+        "THEOLOGY",
+        parseInstructor("Patrick S. Flanagan C.M.")!,
+      ),
+    ).toBe("r1:_:theology:flanagan:patrick:s");
 
     const thanh = parseInstructor("Thanh Van Nguyen");
     expect(thanh && localCacheKey(1, " Queens Campus", "HISTORY", thanh)).toBe(
@@ -439,8 +513,20 @@ describe("campus and cache keys", () => {
     const christinaDot = parseInstructor("Christina L. Schweikert");
     expect(christina && christinaDot).toBeTruthy();
     if (christina && christinaDot) {
-      expect(localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", christina)).toBe(
-        localCacheKey(1, " Queens Campus", "COMPUTER SCIENCE - CCPS", christinaDot),
+      expect(
+        localCacheKey(
+          1,
+          " Queens Campus",
+          "COMPUTER SCIENCE - CCPS",
+          christina,
+        ),
+      ).toBe(
+        localCacheKey(
+          1,
+          " Queens Campus",
+          "COMPUTER SCIENCE - CCPS",
+          christinaDot,
+        ),
       );
     }
 
@@ -451,49 +537,92 @@ describe("campus and cache keys", () => {
 
 describe("subject tie-break", () => {
   it("drops a trailing college code, including a six-letter program code", () => {
-    expect(normalizeSubject("COMPUTER SCIENCE - CCPS")).toBe("computer science");
+    expect(normalizeSubject("COMPUTER SCIENCE - CCPS")).toBe(
+      "computer science",
+    );
     expect(normalizeSubject("COMPUTER SCIENCE - SJC")).toBe("computer science");
     expect(subjectKey("COMPUTER SCIENCE - CCPS")).toBe("computer-science");
     expect(subjectKey("COMPUTER SCIENCE - SJC")).toBe("computer-science");
     expect(normalizeSubject("THEOLOGY")).toBe("theology");
-    expect(normalizeSubject("CLINICAL PHARMACY PRACTICE")).toBe("clinical pharmacy practice");
+    expect(normalizeSubject("CLINICAL PHARMACY PRACTICE")).toBe(
+      "clinical pharmacy practice",
+    );
     expect(normalizeSubject("PHARMACY - PHARMD")).toBe("pharmacy");
     expect(subjectTokens("PHARMACY - PHARMD")).toEqual(["pharmacy"]);
-    expect(subjectTokens("CLINICAL PHARMACY PRACTICE")).toEqual(["clinical", "pharmacy", "practice"]);
+    expect(subjectTokens("CLINICAL PHARMACY PRACTICE")).toEqual([
+      "clinical",
+      "pharmacy",
+      "practice",
+    ]);
     expect(subjectTokens("COMPUTER SCIENCE - CCPS")).toEqual(["computer"]);
     expect(normalizeSubject("ACCOUNTING - TOBIN")).toBe("accounting");
     expect(subjectKey(null)).toBe("_");
   });
 
   it("uses token overlap for unrelated departments and does not stem one department into another", () => {
-    expect(compareSubject("COMPUTER SCIENCE - CCPS", "Computer Science").agreement).toBe("match");
-    expect(compareSubject("COMPUTER SCIENCE - CCPS", "Computer Information Systems").agreement).toBe("match");
-    expect(compareSubject("COMPUTER SCIENCE - CCPS", "History").agreement).toBe("conflict");
-    expect(compareSubject("COMPUTER SCIENCE - CCPS", "Political Science").agreement).toBe("conflict");
-    expect(compareSubject("COMPUTER SCIENCE - SJC", "Accounting").agreement).toBe("conflict");
+    expect(
+      compareSubject("COMPUTER SCIENCE - CCPS", "Computer Science").agreement,
+    ).toBe("match");
+    expect(
+      compareSubject("COMPUTER SCIENCE - CCPS", "Computer Information Systems")
+        .agreement,
+    ).toBe("match");
+    expect(compareSubject("COMPUTER SCIENCE - CCPS", "History").agreement).toBe(
+      "conflict",
+    );
+    expect(
+      compareSubject("COMPUTER SCIENCE - CCPS", "Political Science").agreement,
+    ).toBe("conflict");
+    expect(
+      compareSubject("COMPUTER SCIENCE - SJC", "Accounting").agreement,
+    ).toBe("conflict");
     expect(compareSubject("THEOLOGY", "Theology").agreement).toBe("match");
     expect(compareSubject("THEOLOGY", "History").agreement).toBe("conflict");
-    expect(compareSubject("ACCOUNTING - TOBIN", "Accounting").agreement).toBe("match");
-    expect(compareSubject("ACCOUNTING - TOBIN", "ACCT").agreement).toBe("match");
-    expect(compareSubject("ACCOUNTING - TOBIN", "History").agreement).toBe("conflict");
+    expect(compareSubject("ACCOUNTING - TOBIN", "Accounting").agreement).toBe(
+      "match",
+    );
+    expect(compareSubject("ACCOUNTING - TOBIN", "ACCT").agreement).toBe(
+      "match",
+    );
+    expect(compareSubject("ACCOUNTING - TOBIN", "History").agreement).toBe(
+      "conflict",
+    );
     expect(compareSubject("HISTORY", "HIST").agreement).toBe("match");
     expect(compareSubject("MATHEMATICS", "Math").agreement).toBe("match");
     expect(compareSubject("LAW", "Law").agreement).toBe("match");
-    expect(compareSubject("CLINICAL PHARMACY PRACTICE", "Pharmacy").agreement).toBe("match");
-    expect(compareSubject("PHARMACY - PHARMD", "Pharmacy").agreement).toBe("match");
-    expect(compareSubject("PHARMACY - PHARMD", "Pharmacology").agreement).toBe("conflict");
-    expect(compareSubject("PHARMACY - PHARMD", "Pharmaceutical Sciences").agreement).toBe("conflict");
+    expect(
+      compareSubject("CLINICAL PHARMACY PRACTICE", "Pharmacy").agreement,
+    ).toBe("match");
+    expect(compareSubject("PHARMACY - PHARMD", "Pharmacy").agreement).toBe(
+      "match",
+    );
+    expect(compareSubject("PHARMACY - PHARMD", "Pharmacology").agreement).toBe(
+      "conflict",
+    );
+    expect(
+      compareSubject("PHARMACY - PHARMD", "Pharmaceutical Sciences").agreement,
+    ).toBe("conflict");
     expect(compareSubject("PHYSICS", "Physics").agreement).toBe("match");
-    expect(compareSubject("PHYSICS", "Physical Education").agreement).toBe("conflict");
+    expect(compareSubject("PHYSICS", "Physical Education").agreement).toBe(
+      "conflict",
+    );
 
-    const clinical = compareSubject("CLINICAL PHARMACY PRACTICE", "Clinical Pharmacy");
+    const clinical = compareSubject(
+      "CLINICAL PHARMACY PRACTICE",
+      "Clinical Pharmacy",
+    );
     const pharmacy = compareSubject("CLINICAL PHARMACY PRACTICE", "Pharmacy");
     expect(clinical.agreement).toBe("match");
     expect(pharmacy.agreement).toBe("match");
     expect(clinical.overlap).toBeGreaterThan(pharmacy.overlap);
 
-    expect(compareSubject(null, "Theology")).toEqual({ agreement: "unknown", overlap: 0 });
-    expect(compareSubject("COMPUTER SCIENCE - CCPS", "Arts & Sciences").agreement).toBe("unknown");
+    expect(compareSubject(null, "Theology")).toEqual({
+      agreement: "unknown",
+      overlap: 0,
+    });
+    expect(
+      compareSubject("COMPUTER SCIENCE - CCPS", "Arts & Sciences").agreement,
+    ).toBe("unknown");
     expect(compareSubject("THEOLOGY", "Business").agreement).toBe("unknown");
   });
 });
@@ -505,25 +634,50 @@ describe("rating contract", () => {
     expect(isRatingResult(shell)).toBe(true);
     expect(isRatingResult(scored)).toBe(true);
     expect(isRatingResult(notListedResult())).toBe(true);
-    expect(notListedResult()).toEqual({ status: "not_listed", ttlSeconds: TTL_SHORT_SECONDS });
+    expect(notListedResult()).toEqual({
+      status: "not_listed",
+      ttlSeconds: TTL_SHORT_SECONDS,
+    });
     expect(isRatingResult(unavailableResult())).toBe(true);
 
     expect(isRatingResult(rated({ numRatings: 0, quality: 0 }))).toBe(false);
     expect(isRatingResult(rated({ numRatings: 0, quality: 4.5 }))).toBe(false);
     expect(isRatingResult(unrated({ numRatings: 5 }))).toBe(false);
 
-    expect(isRatingResult(rated({ match: "exact", reasons: ["surname_fallback"] }))).toBe(false);
-    expect(isRatingResult(rated({ match: "possible", reasons: ["surname_fallback"] }))).toBe(true);
-    expect(isRatingResult(rated({ match: "exact", reasons: ["nickname"] }))).toBe(false);
-    expect(isRatingResult(rated({ match: "possible", reasons: ["nickname"] }))).toBe(true);
-    expect(isRatingResult(rated({ match: "exact", reasons: ["middle_conflict"] }))).toBe(false);
-    expect(isRatingResult(rated({ match: "exact", reasons: ["department_conflict"] }))).toBe(false);
-    expect(isRatingResult(rated({ match: "exact", reasons: ["unknown_campus"] }))).toBe(false);
-    expect(isRatingResult(rated({ match: "exact", reasons: ["initial"] }))).toBe(true);
+    expect(
+      isRatingResult(rated({ match: "exact", reasons: ["surname_fallback"] })),
+    ).toBe(false);
+    expect(
+      isRatingResult(
+        rated({ match: "possible", reasons: ["surname_fallback"] }),
+      ),
+    ).toBe(true);
+    expect(
+      isRatingResult(rated({ match: "exact", reasons: ["nickname"] })),
+    ).toBe(false);
+    expect(
+      isRatingResult(rated({ match: "possible", reasons: ["nickname"] })),
+    ).toBe(true);
+    expect(
+      isRatingResult(rated({ match: "exact", reasons: ["middle_conflict"] })),
+    ).toBe(false);
+    expect(
+      isRatingResult(
+        rated({ match: "exact", reasons: ["department_conflict"] }),
+      ),
+    ).toBe(false);
+    expect(
+      isRatingResult(rated({ match: "exact", reasons: ["unknown_campus"] })),
+    ).toBe(false);
+    expect(
+      isRatingResult(rated({ match: "exact", reasons: ["initial"] })),
+    ).toBe(true);
 
     expect(isCacheable(unavailableResult())).toBe(false);
     expect(toStoredRating(unavailableResult(), 0)).toBeNull();
-    expect(toStoredRating(rated({ numRatings: 0, quality: 0 }) as RatingResult, 0)).toBeNull();
+    expect(
+      toStoredRating(rated({ numRatings: 0, quality: 0 }) as RatingResult, 0),
+    ).toBeNull();
     expect(toStoredRating(notListedResult(), 1_000)).toEqual({
       result: notListedResult(),
       expiresAt: 1_000 + TTL_SHORT_SECONDS * 1000,
@@ -533,7 +687,9 @@ describe("rating contract", () => {
       throw new Error("zero-rating fixture was rejected");
     }
     expect(shell.status).toBe("unrated");
-    expect(toStoredRating(shell, 5_000)?.expiresAt).toBe(5_000 + TTL_SHORT_SECONDS * 1000);
+    expect(toStoredRating(shell, 5_000)?.expiresAt).toBe(
+      5_000 + TTL_SHORT_SECONDS * 1000,
+    );
 
     if (!isRatingResult(scored) || !isCacheable(scored)) {
       throw new Error("rated fixture was rejected");
@@ -597,21 +753,42 @@ describe("batch limits", () => {
       ["o4"],
     ]);
 
-    expect(parseRatingsRequest({ items: batch(6, " Queens Campus") }).ok).toBe(true);
-    expect(parseRatingsRequest({ items: batch(7, " Queens Campus") }).ok).toBe(false);
-    expect(parseRatingsRequest({ items: batch(4, "Manhattan Campus") }).ok).toBe(true);
-    expect(parseRatingsRequest({ items: batch(5, "Manhattan Campus") }).ok).toBe(false);
-    expect(parseRatingsRequest({ items: batch(3, "Online Learning") }).ok).toBe(true);
-    expect(parseRatingsRequest({ items: batch(4, "Online Learning") }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(6, " Queens Campus") }).ok).toBe(
+      true,
+    );
+    expect(parseRatingsRequest({ items: batch(7, " Queens Campus") }).ok).toBe(
+      false,
+    );
+    expect(
+      parseRatingsRequest({ items: batch(4, "Manhattan Campus") }).ok,
+    ).toBe(true);
+    expect(
+      parseRatingsRequest({ items: batch(5, "Manhattan Campus") }).ok,
+    ).toBe(false);
+    expect(parseRatingsRequest({ items: batch(3, "Online Learning") }).ok).toBe(
+      true,
+    );
+    expect(parseRatingsRequest({ items: batch(4, "Online Learning") }).ok).toBe(
+      false,
+    );
     expect(parseRatingsRequest({ items: batch(3, null) }).ok).toBe(true);
     expect(parseRatingsRequest({ items: batch(4, null) }).ok).toBe(false);
-    expect(parseRatingsRequest({ items: batch(4, "Staten Island") }).ok).toBe(true);
-    expect(parseRatingsRequest({ items: batch(5, "Staten Island") }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(4, "Staten Island") }).ok).toBe(
+      true,
+    );
+    expect(parseRatingsRequest({ items: batch(5, "Staten Island") }).ok).toBe(
+      false,
+    );
     expect(
       parseRatingsRequest({
         items: [
           ...batch(3, " Queens Campus"),
-          { key: "o", name: "Joan DeBello", campus: "Online Learning", subject: "THEOLOGY" },
+          {
+            key: "o",
+            name: "Joan DeBello",
+            campus: "Online Learning",
+            subject: "THEOLOGY",
+          },
         ],
       }).ok,
     ).toBe(false);

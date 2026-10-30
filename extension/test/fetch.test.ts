@@ -3,9 +3,17 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
-import { CLIENT_ID_HEADER, STORAGE_KEYS, isRatingResult } from "../../shared/src/contract";
+import {
+  CLIENT_ID_HEADER,
+  STORAGE_KEYS,
+  isRatingResult,
+} from "../../shared/src/contract";
 import { scanGrid } from "../src/grid";
-import { RATINGS_ENDPOINT, fetchRatings, type Stored } from "../src/service-worker";
+import {
+  RATINGS_ENDPOINT,
+  fetchRatings,
+  type Stored,
+} from "../src/service-worker";
 
 const NAME = "Zzyzx Qalph Notapersonzz";
 const STUDENT_ID = "800123456";
@@ -21,7 +29,9 @@ interface Call {
   errorText: string;
 }
 
-function memory(initial: { [key: string]: unknown } = {}): Stored & { values: { [key: string]: unknown } } {
+function memory(
+  initial: { [key: string]: unknown } = {},
+): Stored & { values: { [key: string]: unknown } } {
   const values = { ...initial };
   return {
     values,
@@ -48,7 +58,10 @@ function liveFetch(calls: Call[]): typeof fetch {
   };
 }
 
-function row(key: string, campus: string | null): { key: string; name: string; campus: string | null; subject: string } {
+function row(
+  key: string,
+  campus: string | null,
+): { key: string; name: string; campus: string | null; subject: string } {
   return { key, name: NAME, campus, subject: "Computer Science" };
 }
 
@@ -68,9 +81,16 @@ function assertPosts(calls: readonly Call[], clientId: string): void {
     expect(call.body).not.toContain(STUDENT_ID);
     expect(call.body).not.toContain(EMAIL);
     expect(call.body).not.toContain(COOKIE);
-    const body = JSON.parse(call.body) as { items: { [key: string]: unknown }[] };
+    const body = JSON.parse(call.body) as {
+      items: { [key: string]: unknown }[];
+    };
     for (const item of body.items) {
-      expect(Object.keys(item).sort()).toEqual(["campus", "key", "name", "subject"]);
+      expect(Object.keys(item).sort()).toEqual([
+        "campus",
+        "key",
+        "name",
+        "subject",
+      ]);
     }
   }
 }
@@ -91,7 +111,10 @@ describe("extension fetch against the deployed worker", () => {
     expect(lengths(calls)).toEqual([6, 6, 6, 6, 6, 6, 6, 6, 2]);
     expect(queensReply.cacheVersion).toBe(1);
     for (const key of ["q0", "q1", "q2", "q3", "q4", "q5"]) {
-      expect(isRatingResult(queensReply.results[key]), JSON.stringify(queensReply.results[key])).toBe(true);
+      expect(
+        isRatingResult(queensReply.results[key]),
+        JSON.stringify(queensReply.results[key]),
+      ).toBe(true);
     }
 
     const hiddenAt = calls.length;
@@ -102,7 +125,9 @@ describe("extension fetch against the deployed worker", () => {
       fetchImpl,
     );
     expect(lengths(calls.slice(hiddenAt))).toEqual([3, 1]);
-    expect(hiddenReply.results.h0 && isRatingResult(hiddenReply.results.h0)).toBe(true);
+    expect(
+      hiddenReply.results.h0 && isRatingResult(hiddenReply.results.h0),
+    ).toBe(true);
 
     const manhattanAt = calls.length;
     await fetchRatings(
@@ -123,7 +148,9 @@ describe("extension fetch against the deployed worker", () => {
     expect(lengths(calls.slice(statenAt))).toEqual([4, 1]);
 
     const clientId = local.values[STORAGE_KEYS.clientId];
-    expect(clientId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(clientId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
     assertPosts(calls, clientId as string);
 
     const window = new Window();
@@ -135,7 +162,12 @@ describe("extension fetch against the deployed worker", () => {
     expect(JSON.stringify(message)).not.toContain(EMAIL);
     expect(JSON.stringify(message)).not.toContain(COOKIE);
     const fixtureAt = calls.length;
-    const fixtureReply = await fetchRatings(message.items, local, session, fetchImpl);
+    const fixtureReply = await fetchRatings(
+      message.items,
+      local,
+      session,
+      fetchImpl,
+    );
     expect(calls.length - fixtureAt).toBe(1);
     expect(isRatingResult(Object.values(fixtureReply.results)[0])).toBe(true);
     assertPosts(calls.slice(fixtureAt), clientId as string);
@@ -180,12 +212,19 @@ describe("extension fetch against the deployed worker", () => {
     const elapsed = Date.now() - started;
     if (elapsed > 5_000) {
       const remain = 60_000 - elapsed + 500;
-      if (remain > 0) await new Promise((resolve) => setTimeout(resolve, remain));
+      if (remain > 0)
+        await new Promise((resolve) => setTimeout(resolve, remain));
     }
-    for (let index = elapsed > 5_000 ? 0 : 1; index < 30; index += 1) await post();
+    for (let index = elapsed > 5_000 ? 0 : 1; index < 30; index += 1)
+      await post();
 
     const calls: Call[] = [];
-    const blocked = await fetchRatings([item], local, session, liveFetch(calls));
+    const blocked = await fetchRatings(
+      [item],
+      local,
+      session,
+      liveFetch(calls),
+    );
     expect(calls).toHaveLength(1);
     expect(calls[0]?.status).toBe(429);
     expect(blocked.cacheVersion).toBe(1);
@@ -202,8 +241,15 @@ describe("extension fetch against the deployed worker", () => {
     expect(calls).toHaveLength(0);
     expect(held.results.shared).toEqual({ status: "unavailable" });
 
-    await new Promise((resolve) => setTimeout(resolve, (until as number) - Date.now() + 500));
-    const resumed = await fetchRatings([item], local, session, liveFetch(calls));
+    await new Promise((resolve) =>
+      setTimeout(resolve, (until as number) - Date.now() + 500),
+    );
+    const resumed = await fetchRatings(
+      [item],
+      local,
+      session,
+      liveFetch(calls),
+    );
     expect(calls).toHaveLength(1);
     expect(calls[0]?.status, calls[0]?.errorText).toBe(200);
     expect(isRatingResult(resumed.results.shared)).toBe(true);
@@ -214,11 +260,25 @@ describe("extension fetch against the deployed worker", () => {
       cwd: fileURLToPath(new URL("../..", import.meta.url)),
     });
     const root = new URL("..", import.meta.url);
-    for (const name of ["content-script.ts", "grid.ts", "paint.ts", "chip.ts", "popup.ts"]) {
-      expect(readFileSync(new URL(`src/${name}`, root), "utf8")).not.toMatch(/\bfetch\s*\(/);
+    for (const name of [
+      "content-script.ts",
+      "grid.ts",
+      "paint.ts",
+      "chip.ts",
+      "popup.ts",
+    ]) {
+      expect(readFileSync(new URL(`src/${name}`, root), "utf8")).not.toMatch(
+        /\bfetch\s*\(/,
+      );
     }
-    const content = readFileSync(new URL("dist/content-script.js", root), "utf8");
-    const worker = readFileSync(new URL("dist/service-worker.js", root), "utf8");
+    const content = readFileSync(
+      new URL("dist/content-script.js", root),
+      "utf8",
+    );
+    const worker = readFileSync(
+      new URL("dist/service-worker.js", root),
+      "utf8",
+    );
     const popup = readFileSync(new URL("dist/popup.js", root), "utf8");
     expect(content).not.toContain(BANNER_SEARCH);
     expect(worker).not.toContain(BANNER_SEARCH);

@@ -33,8 +33,15 @@ const UNDECOMPOSED_PATTERN = /[øØłŁđĐðÐþÞßæÆœŒı]/g;
 function decodeEntity(match: string, body: string): string {
   if (body.startsWith("#")) {
     const isHex = body[1] === "x" || body[1] === "X";
-    const codePoint = Number.parseInt(body.slice(isHex ? 2 : 1), isHex ? 16 : 10);
-    if (!Number.isInteger(codePoint) || codePoint <= 0 || codePoint > 0x10ffff) {
+    const codePoint = Number.parseInt(
+      body.slice(isHex ? 2 : 1),
+      isHex ? 16 : 10,
+    );
+    if (
+      !Number.isInteger(codePoint) ||
+      codePoint <= 0 ||
+      codePoint > 0x10ffff
+    ) {
       return match;
     }
     return String.fromCodePoint(codePoint);
@@ -67,7 +74,10 @@ export function foldDiacritics(text: string): string {
   return text
     .normalize("NFKD")
     .replace(/\p{M}+/gu, "")
-    .replace(UNDECOMPOSED_PATTERN, (letter) => LETTERS_WITHOUT_DECOMPOSITION.get(letter) ?? letter);
+    .replace(
+      UNDECOMPOSED_PATTERN,
+      (letter) => LETTERS_WITHOUT_DECOMPOSITION.get(letter) ?? letter,
+    );
 }
 
 /** Comparison key: folded, lowercased, and stripped of everything but letters and digits. */

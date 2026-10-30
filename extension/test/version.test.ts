@@ -8,7 +8,11 @@ import {
 import { localCacheKey } from "../../shared/src/keys";
 import { parseInstructor } from "../../shared/src/names";
 import { runContentScript, type SyncListen } from "../src/content-script";
-import { checkVersion, VERSION_ENDPOINT, type Area } from "../src/service-worker";
+import {
+  checkVersion,
+  VERSION_ENDPOINT,
+  type Area,
+} from "../src/service-worker";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
@@ -29,7 +33,9 @@ function rated(): RatedResult {
   };
 }
 
-function memory(initial: { [key: string]: unknown } = {}): Area & { values: { [key: string]: unknown } } {
+function memory(
+  initial: { [key: string]: unknown } = {},
+): Area & { values: { [key: string]: unknown } } {
   const values = { ...initial };
   return {
     values,
@@ -62,7 +68,10 @@ describe("extension version", () => {
   });
 
   it("asks the deployed worker once, then skips until the session timestamp is six hours old", async () => {
-    const local = memory({ [STORAGE_KEYS.cacheVersion]: 1, [STORAGE_KEYS.enabled]: true });
+    const local = memory({
+      [STORAGE_KEYS.cacheVersion]: 1,
+      [STORAGE_KEYS.enabled]: true,
+    });
     const session = memory();
     const calls: string[] = [];
     const fetchImpl: typeof fetch = async (input, init) => {
@@ -101,7 +110,9 @@ describe("extension version", () => {
     await checkVersion(local, session, fetchImpl, 1_000);
     expect(local.values[stale]).toBeUndefined();
     expect(local.values[STORAGE_KEYS.enabled]).toBe(true);
-    expect(local.values[STORAGE_KEYS.clientId]).toBe("11111111-1111-1111-1111-111111111111");
+    expect(local.values[STORAGE_KEYS.clientId]).toBe(
+      "11111111-1111-1111-1111-111111111111",
+    );
     expect(local.values[STORAGE_KEYS.cacheVersion]).toBe(4);
     expect(session.values[STORAGE_KEYS.versionCheckedAt]).toBe(1_000);
   });
@@ -114,7 +125,12 @@ describe("extension version", () => {
       [STORAGE_KEYS.cacheVersion]: 1,
       [key]: { result: rated(), expiresAt: Date.now() + 60_000 },
     };
-    const listeners: Array<(changes: { [key: string]: { newValue?: unknown } }, areaName: string) => void> = [];
+    const listeners: Array<
+      (
+        changes: { [key: string]: { newValue?: unknown } },
+        areaName: string,
+      ) => void
+    > = [];
     const local = {
       get: (keys: readonly string[]) => {
         const found: { [key: string]: unknown } = {};
@@ -146,9 +162,17 @@ describe("extension version", () => {
     const area = memory();
     const session = memory();
     const window = mount("John Smith");
-    const content = runContentScript(window.document, "8103", undefined, sync, local, undefined, () => {
-      void checkVersion(area, session, fetchImpl, Date.now());
-    });
+    const content = runContentScript(
+      window.document,
+      "8103",
+      undefined,
+      sync,
+      local,
+      undefined,
+      () => {
+        void checkVersion(area, session, fetchImpl, Date.now());
+      },
+    );
     if (content === null) throw new Error("content script did not start");
     await window.happyDOM.waitUntilComplete();
     const chip = window.document.querySelector(".rspr-chip");

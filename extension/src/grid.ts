@@ -1,8 +1,25 @@
-import { type RatingRequestItem, type RatingsResponse } from "../../shared/src/contract";
+import {
+  type RatingRequestItem,
+  type RatingsResponse,
+} from "../../shared/src/contract";
 import { localCacheKey } from "../../shared/src/keys";
-import { instructorTextsFromCell, parseInstructor, type InstructorCellNode } from "../../shared/src/names";
-import { canPaintInstructor, instructorChip, paintInstructorCell, type ChipPaint } from "./chip";
-import { paintReply, paintSlots, type LocalRatings, type Paintable } from "./paint";
+import {
+  instructorTextsFromCell,
+  parseInstructor,
+  type InstructorCellNode,
+} from "../../shared/src/names";
+import {
+  canPaintInstructor,
+  instructorChip,
+  paintInstructorCell,
+  type ChipPaint,
+} from "./chip";
+import {
+  paintReply,
+  paintSlots,
+  type LocalRatings,
+  type Paintable,
+} from "./paint";
 
 /** Content script to service worker. The service worker answers with `RatingsQueryReply`. */
 export interface RatingsQueryMessage {
@@ -16,7 +33,8 @@ export interface ViewHost {
   MutationObserver: typeof MutationObserver;
 }
 
-const GRID_SELECTOR = 'ssb-class-search-results .class-search-results-grid > table.grid[role="grid"]';
+const GRID_SELECTOR =
+  'ssb-class-search-results .class-search-results-grid > table.grid[role="grid"]';
 
 function headerLabel(header: Element): string {
   return (header.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -29,7 +47,8 @@ function columnCell(
   label: string,
   keyed: boolean,
 ): Element | null {
-  if (keyed) return row.querySelector(`:scope > td[data-property="${property}"]`);
+  if (keyed)
+    return row.querySelector(`:scope > td[data-property="${property}"]`);
   const index = headers.findIndex((header) => headerLabel(header) === label);
   if (index < 0) return null;
   return row.querySelectorAll(":scope > td")[index] ?? null;
@@ -47,17 +66,37 @@ function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
     const headers = [...table.querySelectorAll(":scope > thead > tr > th")];
     const keyed = table.querySelector("[data-property]") !== null;
     const instructorHeader = keyed
-      ? headers.some((header) => header.getAttribute("data-property") === "instructor")
+      ? headers.some(
+          (header) => header.getAttribute("data-property") === "instructor",
+        )
       : headers.some((header) => headerLabel(header) === "instructor");
     if (!instructorHeader) continue;
-    for (const row of table.querySelectorAll(':scope > tbody > tr[role="row"]')) {
-      const instructor = columnCell(row, headers, "instructor", "instructor", keyed);
+    for (const row of table.querySelectorAll(
+      ':scope > tbody > tr[role="row"]',
+    )) {
+      const instructor = columnCell(
+        row,
+        headers,
+        "instructor",
+        "instructor",
+        keyed,
+      );
       if (instructor === null) continue;
       const cell = instructor as HTMLElement;
-      const names = instructorTextsFromCell(cell as unknown as InstructorCellNode);
-      const campus = columnText(columnCell(row, headers, "campus", "campus", keyed));
+      const names = instructorTextsFromCell(
+        cell as unknown as InstructorCellNode,
+      );
+      const campus = columnText(
+        columnCell(row, headers, "campus", "campus", keyed),
+      );
       const subject = columnText(
-        columnCell(row, headers, "subjectDescription", "subject description", keyed),
+        columnCell(
+          row,
+          headers,
+          "subjectDescription",
+          "subject description",
+          keyed,
+        ),
       );
       for (let index = 0; index < names.length; index += 1) {
         const name = names[index];
@@ -85,7 +124,10 @@ function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
 }
 
 /** Loading diamonds for real names, plus the request the service worker will answer. No fetch. */
-export function scanGrid(root: ParentNode, cacheVersion: number): RatingsQueryMessage {
+export function scanGrid(
+  root: ParentNode,
+  cacheVersion: number,
+): RatingsQueryMessage {
   const items: RatingRequestItem[] = [];
   const seen = new Set<string>();
   for (const slot of collectSlots(root, cacheVersion)) {
@@ -115,7 +157,13 @@ export function observeGrid(
     if (stopped) return;
     const mine = ++pass;
     const slots = collectSlots(parent, cacheVersion);
-    void paintSlots(slots, local, deliver, () => stopped || mine !== pass, wake).then((next) => {
+    void paintSlots(
+      slots,
+      local,
+      deliver,
+      () => stopped || mine !== pass,
+      wake,
+    ).then((next) => {
       if (stopped || mine !== pass) return;
       pending = next;
     });

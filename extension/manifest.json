@@ -16,7 +16,9 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*"],
+      "matches": [
+        "https://reg-prod.stjohns.elluciancloud.com/StudentRegistrationSsb/*"
+      ],
       "css": ["content.css"],
       "js": ["dist/content-script.js"]
     }

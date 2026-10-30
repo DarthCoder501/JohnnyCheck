@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { CLIENT_ID_HEADER, isRatingResult, parseVersionResponse } from "../shared/src/contract";
+import {
+  CLIENT_ID_HEADER,
+  isRatingResult,
+  parseVersionResponse,
+} from "../shared/src/contract";
 
 const ORIGIN = "https://red-storm-prof-ratings.johnnycheck.workers.dev";
 
@@ -22,22 +26,35 @@ test("GET /privacy is the policy page", async ({ page }) => {
   const body = await page.locator("body").innerText();
   expect(body).toContain("Red Storm Professor Ratings");
   expect(body).toContain("instructor name, campus, and subject description");
-  expect(body).toContain("random client id used only for rate limits");
-  expect(body).toContain("7-day shared cache for rated");
-  expect(body).toContain("24-hour shared cache for unrated");
-  expect(body).toContain("24-hour browser cache for not_listed");
-  expect(body).toContain("cacheVersion change drops local r* entries");
-  expect(body).toContain("No student id, schedule, grades, cookies, or auth tokens are collected or sold.");
+  expect(body).toContain("random installation ID used only for rate limits");
+  expect(body).toContain("shared cache for 7 days for rated profiles");
+  expect(body).toContain("24 hours for unrated profiles");
+  expect(body).toContain("not_listed names");
+  expect(body).toContain(
+    "If cacheVersion changes, local r* entries are dropped.",
+  );
+  expect(body).toContain(
+    "No student id, schedule, grades, cookies, or auth tokens are collected or sold.",
+  );
   expect(body).not.toMatch(/Bearer |rmpToken/);
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.locator("h2")).toHaveCount(4);
   await expect(page.locator("button, img")).toHaveCount(0);
-  await expect(page.locator("header")).toHaveCSS("background-color", "rgb(20, 130, 128)");
+  await expect(page.locator("header")).toHaveCSS(
+    "background-color",
+    "rgb(20, 130, 128)",
+  );
   await expect(page.locator("h1")).toHaveCSS("color", "rgb(255, 255, 255)");
-  await expect(page.locator(".mark")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await expect(page.locator(".mark")).toHaveCSS("width", "6px");
-  await expect(page.locator(".mark")).toHaveCSS("height", "6px");
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.locator(".mark")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(page.locator(".mark")).toHaveCSS("width", "8px");
+  await expect(page.locator(".mark")).toHaveCSS("height", "8px");
+  await expect(page.locator("body")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
   await expect(page.locator("body")).toHaveCSS("color", "rgb(34, 34, 34)");
   await expect(page.locator("body")).toHaveCSS("font-size", "16px");
   for (const heading of await page.locator("h2").all()) {
@@ -47,7 +64,9 @@ test("GET /privacy is the policy page", async ({ page }) => {
   for (const width of [390, 1280, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
   }
@@ -60,13 +79,18 @@ test("unknown paths are 404", async ({ request }) => {
 
 test("a ratings body that is not JSON is rejected", async ({ request }) => {
   const response = await request.post(`${ORIGIN}/v1/ratings`, {
-    headers: { [CLIENT_ID_HEADER]: crypto.randomUUID(), "content-type": "text/plain" },
+    headers: {
+      [CLIENT_ID_HEADER]: crypto.randomUUID(),
+      "content-type": "text/plain",
+    },
     data: "not-json",
   });
   expect(response.status()).toBe(400);
 });
 
-test("a missing client id is rejected and is not stored on a rating", async ({ request }) => {
+test("a missing client id is rejected and is not stored on a rating", async ({
+  request,
+}) => {
   const response = await request.post(`${ORIGIN}/v1/ratings`, {
     data: { items: [item("probe", "Zzyzx Notapersonzz")] },
   });
@@ -75,7 +99,9 @@ test("a missing client id is rejected and is not stored on a rating", async ({ r
   expect(text).toContain("X-Client-ID");
 });
 
-test("an empty batch and a Queens batch of 7 are rejected", async ({ request }) => {
+test("an empty batch and a Queens batch of 7 are rejected", async ({
+  request,
+}) => {
   const client = crypto.randomUUID();
   const empty = await request.post(`${ORIGIN}/v1/ratings`, {
     headers: { [CLIENT_ID_HEADER]: client },
@@ -84,7 +110,11 @@ test("an empty batch and a Queens batch of 7 are rejected", async ({ request }) 
   expect(empty.status()).toBe(400);
   const oversized = await request.post(`${ORIGIN}/v1/ratings`, {
     headers: { [CLIENT_ID_HEADER]: client },
-    data: { items: Array.from({ length: 7 }, (_, index) => item(`row-${index}`, "Zzyzx Notapersonzz")) },
+    data: {
+      items: Array.from({ length: 7 }, (_, index) =>
+        item(`row-${index}`, "Zzyzx Notapersonzz"),
+      ),
+    },
   });
   const text = await oversized.text();
   expect(oversized.status(), text).toBe(400);
@@ -112,7 +142,10 @@ test("one unknown Queens name returns a rating result", async ({ request }) => {
   const text = await response.text();
   expect(response.status(), text).toBe(200);
   expect(text).not.toContain(clientId);
-  const body = JSON.parse(text) as { cacheVersion?: unknown; results?: Record<string, unknown> };
+  const body = JSON.parse(text) as {
+    cacheVersion?: unknown;
+    results?: Record<string, unknown>;
+  };
   expect(typeof body.cacheVersion).toBe("number");
   const result = body.results?.["e2e-probe"];
   expect(isRatingResult(result), text).toBe(true);

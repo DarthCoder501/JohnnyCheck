@@ -23,7 +23,10 @@ export interface Paintable {
 }
 
 /** A stored `not_listed`, `rated`, or `unrated` entry that has not expired. */
-export function storedResult(value: unknown, nowMs: number): RatingResult | null {
+export function storedResult(
+  value: unknown,
+  nowMs: number,
+): RatingResult | null {
   if (typeof value !== "object" || value === null) return null;
   if (!("expiresAt" in value) || !("result" in value)) return null;
   const { expiresAt, result } = value;
@@ -99,7 +102,8 @@ export function paintReply(
 }
 
 export function pageLocal(): LocalRatings | undefined {
-  if (typeof chrome === "undefined" || chrome.storage?.local === undefined) return undefined;
+  if (typeof chrome === "undefined" || chrome.storage?.local === undefined)
+    return undefined;
   const area = chrome.storage.local;
   return {
     get: (keys) => area.get([...keys]),
@@ -109,7 +113,11 @@ export function pageLocal(): LocalRatings | undefined {
 
 /** Asks the service worker to check `/v1/version` without waiting on the paint. */
 export function pageWake(): (() => void) | undefined {
-  if (typeof chrome === "undefined" || chrome.runtime?.sendMessage === undefined) return undefined;
+  if (
+    typeof chrome === "undefined" ||
+    chrome.runtime?.sendMessage === undefined
+  )
+    return undefined;
   return () => {
     void chrome.runtime.sendMessage({ checkVersion: true });
   };
@@ -120,7 +128,11 @@ export function pageDeliver(
   onReply: (reply: RatingsResponse) => void,
 ): (message: { items: RatingRequestItem[] }) => void {
   return (message) => {
-    if (typeof chrome === "undefined" || chrome.runtime?.sendMessage === undefined) return;
+    if (
+      typeof chrome === "undefined" ||
+      chrome.runtime?.sendMessage === undefined
+    )
+      return;
     void chrome.runtime.sendMessage(message).then(
       (value: unknown) => {
         const parsed = parseRatingsResponse(value);

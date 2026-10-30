@@ -36,5 +36,8 @@ export function ratingKeyVersion(key: string): number | null {
 }
 
 export function withCacheVersion(key: string, cacheVersion: number): string {
-  return key.replace(RATING_KEY_VERSION, `${RATING_KEY_PREFIX}${cacheVersion}:`);
+  return key.replace(
+    RATING_KEY_VERSION,
+    `${RATING_KEY_PREFIX}${cacheVersion}:`,
+  );
 }

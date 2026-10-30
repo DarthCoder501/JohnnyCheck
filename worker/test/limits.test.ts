@@ -69,7 +69,10 @@ function teacherPage() {
                   avgRating: 4.5,
                   avgDifficulty: 3.1,
                   wouldTakeAgainPercent: 80,
-                  school: { name: "St. John's University - Jamaica/Queens", legacyId: SCHOOL_IDS.queens },
+                  school: {
+                    name: "St. John's University - Jamaica/Queens",
+                    legacyId: SCHOOL_IDS.queens,
+                  },
                 },
               },
             ],
@@ -83,7 +86,10 @@ function teacherPage() {
 }
 
 function post(env: Env, clientId?: string) {
-  const headers = new Headers({ "content-type": "application/json", "CF-Connecting-IP": IP });
+  const headers = new Headers({
+    "content-type": "application/json",
+    "CF-Connecting-IP": IP,
+  });
   if (clientId !== undefined) {
     headers.set(CLIENT_ID_HEADER, clientId);
   }
@@ -92,7 +98,14 @@ function post(env: Env, clientId?: string) {
       method: "POST",
       headers,
       body: JSON.stringify({
-        items: [{ key: "row", name: "Ann Smith", campus: " Queens Campus", subject: "Computer Science" }],
+        items: [
+          {
+            key: "row",
+            name: "Ann Smith",
+            campus: " Queens Campus",
+            subject: "Computer Science",
+          },
+        ],
       }),
     }),
     env,
@@ -193,11 +206,16 @@ describe("POST /v1/ratings limits", () => {
     vi.stubGlobal("caches", {
       default: {
         async match(request: RequestInfo) {
-          const hit = rows.get(request instanceof Request ? request.url : String(request));
+          const hit = rows.get(
+            request instanceof Request ? request.url : String(request),
+          );
           return hit?.clone();
         },
         async put(request: RequestInfo, response: Response) {
-          rows.set(request instanceof Request ? request.url : String(request), response.clone());
+          rows.set(
+            request instanceof Request ? request.url : String(request),
+            response.clone(),
+          );
         },
       },
     });

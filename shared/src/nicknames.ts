@@ -18,7 +18,16 @@ const NICKNAME_GROUPS: readonly (readonly string[])[] = [
     "tina",
     "chrissy",
   ],
-  ["elizabeth", "elisabeth", "liz", "lizzie", "beth", "betty", "eliza", "libby"],
+  [
+    "elizabeth",
+    "elisabeth",
+    "liz",
+    "lizzie",
+    "beth",
+    "betty",
+    "eliza",
+    "libby",
+  ],
   [
     "katherine",
     "catherine",

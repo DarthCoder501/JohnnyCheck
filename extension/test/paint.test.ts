@@ -43,7 +43,10 @@ function mount(name: string, subject: string): Window {
     url: "https://reg-prod.stjohns.elluciancloud.com:8103/StudentRegistrationSsb/ssb/classSearch/classSearch",
   });
   const style = window.document.createElement("style");
-  style.textContent = readFileSync(new URL("../content.css", import.meta.url), "utf8");
+  style.textContent = readFileSync(
+    new URL("../content.css", import.meta.url),
+    "utf8",
+  );
   window.document.head.append(style);
   window.document.body.innerHTML = `<div id="searchResultsParent">${grid(name, subject)}</div>`;
   return window;
@@ -92,7 +95,14 @@ async function shown(
   local: LocalRatings,
   deliver: (message: RatingsQueryMessage) => void,
 ) {
-  const session = runContentScript(window.document, "8103", undefined, undefined, local, deliver);
+  const session = runContentScript(
+    window.document,
+    "8103",
+    undefined,
+    undefined,
+    local,
+    deliver,
+  );
   if (session === null) throw new Error("content script did not start");
   await window.happyDOM.waitUntilComplete();
   return session;
@@ -102,7 +112,10 @@ describe("extension paint", () => {
   it("paints a local hit on one insert and does not message the service worker", async () => {
     const source = [
       readFileSync(new URL("../src/paint.ts", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/content-script.ts", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../src/content-script.ts", import.meta.url),
+        "utf8",
+      ),
       readFileSync(new URL("../src/grid.ts", import.meta.url), "utf8"),
     ].join("\n");
     expect(source).not.toMatch(/fetch\(/);
@@ -136,7 +149,9 @@ describe("extension paint", () => {
     const local = memoryLocal();
     const messages: RatingsQueryMessage[] = [];
     const window = mount("John Smith", "HISTORY");
-    const session = await shown(window, local, (message) => messages.push(message));
+    const session = await shown(window, local, (message) =>
+      messages.push(message),
+    );
 
     const loading = chip(window);
     expect(loading.querySelector(".rspr-mark")).not.toBeNull();
@@ -168,12 +183,18 @@ describe("extension paint", () => {
     });
     const messages: RatingsQueryMessage[] = [];
     const window = mount(name, "HISTORY");
-    const cell = window.document.querySelector("td[data-property='instructor']");
+    const cell = window.document.querySelector(
+      "td[data-property='instructor']",
+    );
     if (cell === null) throw new Error("cell missing");
-    const session = await shown(window, local, (message) => messages.push(message));
+    const session = await shown(window, local, (message) =>
+      messages.push(message),
+    );
 
     expect(chip(window).textContent).toBe("");
-    expect(messages.flatMap((message) => message.items.map((item) => item.key))).toEqual([history]);
+    expect(
+      messages.flatMap((message) => message.items.map((item) => item.key)),
+    ).toEqual([history]);
 
     cell.remove();
     session.applyReply({ cacheVersion: 1, results: { [history]: rated() } });
@@ -186,16 +207,25 @@ describe("extension paint", () => {
     const local = memoryLocal();
     const messages: RatingsQueryMessage[] = [];
     const window = mount("John Smith", "HISTORY");
-    const session = await shown(window, local, (message) => messages.push(message));
+    const session = await shown(window, local, (message) =>
+      messages.push(message),
+    );
     const before = Date.now();
-    session.applyReply({ cacheVersion: 1, results: { [key]: notListedResult() } });
+    session.applyReply({
+      cacheVersion: 1,
+      results: { [key]: notListedResult() },
+    });
     const after = Date.now();
 
     expect(chip(window).textContent).toContain("not listed");
     expect(local.sets).toHaveLength(1);
     const stored = local.values[key] as { expiresAt: number };
-    expect(stored.expiresAt).toBeGreaterThanOrEqual(before + TTL_SHORT_SECONDS * 1000);
-    expect(stored.expiresAt).toBeLessThanOrEqual(after + TTL_SHORT_SECONDS * 1000);
+    expect(stored.expiresAt).toBeGreaterThanOrEqual(
+      before + TTL_SHORT_SECONDS * 1000,
+    );
+    expect(stored.expiresAt).toBeLessThanOrEqual(
+      after + TTL_SHORT_SECONDS * 1000,
+    );
 
     const parent = window.document.getElementById("searchResultsParent");
     if (parent === null) throw new Error("parent missing");
@@ -207,7 +237,10 @@ describe("extension paint", () => {
     const again = memoryLocal();
     const second = mount("John Smith", "HISTORY");
     const missed = await shown(second, again, () => undefined);
-    missed.applyReply({ cacheVersion: 1, results: { [key]: unavailableResult() } });
+    missed.applyReply({
+      cacheVersion: 1,
+      results: { [key]: unavailableResult() },
+    });
     expect(chip(second).textContent).toContain("ratings unavailable");
     expect(again.sets).toEqual([]);
 

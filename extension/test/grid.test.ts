@@ -12,9 +12,21 @@ const SECRET_HREF = "mailto:secret@example.edu";
 const SECRET_ID = "BANNER-SECRET";
 const SECRET_TERM = "TERM-SECRET";
 
-const MOVED = ["courseReferenceNumber", "status", "instructor", "campus", "subjectDescription"] as const;
+const MOVED = [
+  "courseReferenceNumber",
+  "status",
+  "instructor",
+  "campus",
+  "subjectDescription",
+] as const;
 
-const MOVED_LABELS = ["CRN", "Status", "Instructor", "Campus", "Subject Description"] as const;
+const MOVED_LABELS = [
+  "CRN",
+  "Status",
+  "Instructor",
+  "Campus",
+  "Subject Description",
+] as const;
 
 function instructorHtml(name: string): string {
   return `<a class="email instructor-contact-link" aria-haspopup="true" data-banner-id="${SECRET_ID}" data-term="${SECRET_TERM}" href="${SECRET_HREF}">${name}</a> (Primary)<br>`;
@@ -33,14 +45,16 @@ function propertyHead(): string {
 
 function propertyRow(cells: Record<(typeof MOVED)[number], string>): string {
   const tds = MOVED.map(
-    (property) => `<td data-property="${property}" role="gridcell">${cells[property]}</td>`,
+    (property) =>
+      `<td data-property="${property}" role="gridcell">${cells[property]}</td>`,
   ).join("");
   return `<tr role="row">${tds}</tr>`;
 }
 
 function textHead(): string {
   return MOVED_LABELS.map(
-    (label) => `<th role="columnheader">${label}<span class="col-resize-handle"></span></th>`,
+    (label) =>
+      `<th role="columnheader">${label}<span class="col-resize-handle"></span></th>`,
   ).join("");
 }
 
@@ -78,7 +92,10 @@ describe("extension grid", () => {
   it("paints the class-search grid only, and ignores #table1 and a summary table", async () => {
     const source = [
       readFileSync(new URL("../src/grid.ts", import.meta.url), "utf8"),
-      readFileSync(new URL("../src/content-script.ts", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../src/content-script.ts", import.meta.url),
+        "utf8",
+      ),
     ].join("\n");
     expect(source).not.toContain("searchResultsTable");
     expect(source).not.toContain("searchResultsHolder");
@@ -122,7 +139,9 @@ describe("extension grid", () => {
     expect(painted[0]?.getAttribute("aria-label")).toBe("Loading ratings");
     expect(painted[0]?.querySelector(".rspr-mark")).not.toBeNull();
     expect(window.document.querySelector("#table1 .rspr-chip")).toBeNull();
-    expect(window.document.querySelector(".registration-summary .rspr-chip")).toBeNull();
+    expect(
+      window.document.querySelector(".registration-summary .rspr-chip"),
+    ).toBeNull();
     expect(window.document.querySelector("#outside .rspr-chip")).toBeNull();
     const instructor = window.document.querySelector(
       "#searchResultsParent td[data-property='instructor'] .rspr-chip",
@@ -152,12 +171,22 @@ describe("extension grid", () => {
     );
     runContentScript(byProperty.document, "8103");
     await frameSettled(byProperty);
-    const propertyChip = byProperty.document.querySelector("#searchResultsParent .rspr-chip");
-    expect(propertyChip?.parentElement?.getAttribute("data-property")).toBe("instructor");
+    const propertyChip = byProperty.document.querySelector(
+      "#searchResultsParent .rspr-chip",
+    );
+    expect(propertyChip?.parentElement?.getAttribute("data-property")).toBe(
+      "instructor",
+    );
     expect(
-      byProperty.document.querySelector("td[data-property='courseReferenceNumber'] .rspr-chip"),
+      byProperty.document.querySelector(
+        "td[data-property='courseReferenceNumber'] .rspr-chip",
+      ),
     ).toBeNull();
-    expect(byProperty.document.querySelector("td[data-property='status'] .rspr-chip")).toBeNull();
+    expect(
+      byProperty.document.querySelector(
+        "td[data-property='status'] .rspr-chip",
+      ),
+    ).toBeNull();
     const propertyMessage = messageFrom(byProperty);
     expect(propertyMessage.items[0]?.campus).toBe(" Queens Campus");
     expect(propertyMessage.items[0]?.key).toContain(`:${SCHOOL_IDS.queens}:`);
@@ -178,10 +207,21 @@ describe("extension grid", () => {
     );
     runContentScript(headerWindow.document, "8103");
     await frameSettled(headerWindow);
-    const headerChip = headerWindow.document.querySelector("#searchResultsParent .rspr-chip");
-    expect(headerChip?.parentElement?.textContent).toContain("Geoffrey Norman Dick");
-    expect(headerWindow.document.querySelector("#searchResultsParent td")?.querySelector(".rspr-chip")).toBeNull();
-    expect(headerWindow.document.querySelector("#searchResultsParent td")?.textContent).toBe("10946");
+    const headerChip = headerWindow.document.querySelector(
+      "#searchResultsParent .rspr-chip",
+    );
+    expect(headerChip?.parentElement?.textContent).toContain(
+      "Geoffrey Norman Dick",
+    );
+    expect(
+      headerWindow.document
+        .querySelector("#searchResultsParent td")
+        ?.querySelector(".rspr-chip"),
+    ).toBeNull();
+    expect(
+      headerWindow.document.querySelector("#searchResultsParent td")
+        ?.textContent,
+    ).toBe("10946");
     const headerMessage = messageFrom(headerWindow);
     expect(headerMessage.items[0]?.campus).toBe(" Queens Campus");
     expect(headerMessage.items[0]?.key).toContain(`:${SCHOOL_IDS.queens}:`);
@@ -203,9 +243,12 @@ describe("extension grid", () => {
     const parent = window.document.getElementById("searchResultsParent");
     if (parent === null) throw new Error("parent missing");
     runContentScript(window.document, "8103");
-    const instructorCells = [...parent.querySelectorAll("td[data-property='instructor']")];
+    const instructorCells = [
+      ...parent.querySelectorAll("td[data-property='instructor']"),
+    ];
     expect(instructorCells).toHaveLength(2);
-    for (const cell of instructorCells) cell.innerHTML = instructorHtml("Habibeh Rahim");
+    for (const cell of instructorCells)
+      cell.innerHTML = instructorHtml("Habibeh Rahim");
     await mutationsSettled();
     expect(chips(window)).toHaveLength(0);
     await frameSettled(window);
@@ -229,7 +272,8 @@ describe("extension grid", () => {
 
     const oldCell = instructorCells[0];
     const holder = parent.querySelector(".ui-widget-content");
-    if (holder === null || oldCell === undefined) throw new Error("swap fixture missing");
+    if (holder === null || oldCell === undefined)
+      throw new Error("swap fixture missing");
     holder.innerHTML = results(
       propertyHead(),
       propertyRow({
@@ -245,10 +289,15 @@ describe("extension grid", () => {
     expect(chips(window)).toHaveLength(0);
     await frameSettled(window);
     expect(chips(window)).toHaveLength(1);
-    expect(chips(window)[0]?.parentElement?.textContent).toContain("Christopher P. Vogt");
+    expect(chips(window)[0]?.parentElement?.textContent).toContain(
+      "Christopher P. Vogt",
+    );
     expect(oldCell.querySelectorAll(".rspr-chip")).toHaveLength(1);
 
-    const reply: RatingsQueryReply = { cacheVersion: 1, results: {} } satisfies RatingsResponse;
+    const reply: RatingsQueryReply = {
+      cacheVersion: 1,
+      results: {},
+    } satisfies RatingsResponse;
     expect(reply.cacheVersion).toBe(1);
   });
 });

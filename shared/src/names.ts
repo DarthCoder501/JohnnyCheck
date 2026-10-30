@@ -118,7 +118,12 @@ function isDottedInitialism(token: string): boolean {
   return /^(?:\p{L}{1,3}\.)+\p{L}{1,3}\.?$/u.test(token);
 }
 
-function isSuffix(token: string, precededByComma: boolean, wordsBeforeComma: number, minWordsBeforeComma: number): boolean {
+function isSuffix(
+  token: string,
+  precededByComma: boolean,
+  wordsBeforeComma: number,
+  minWordsBeforeComma: number,
+): boolean {
   if (isDottedInitialism(token)) {
     return true;
   }
@@ -129,11 +134,17 @@ function isSuffix(token: string, precededByComma: boolean, wordsBeforeComma: num
   if (!SUFFIXES_NEEDING_DOTS_OR_COMMA.has(form)) {
     return false;
   }
-  return /\p{L}\.\p{L}/u.test(token) || (precededByComma && wordsBeforeComma >= minWordsBeforeComma);
+  return (
+    /\p{L}\.\p{L}/u.test(token) ||
+    (precededByComma && wordsBeforeComma >= minWordsBeforeComma)
+  );
 }
 
 /** Bare `MA`, `MS`, or `MBA` stay unless dotted or after a comma, because Ma and Mba are also surnames. */
-function stripTrailingSuffixes(tokens: string[], minWordsBeforeComma: number): void {
+function stripTrailingSuffixes(
+  tokens: string[],
+  minWordsBeforeComma: number,
+): void {
   for (;;) {
     while (tokens.at(-1) === COMMA) {
       tokens.pop();
@@ -143,8 +154,12 @@ function stripTrailingSuffixes(tokens: string[], minWordsBeforeComma: number): v
       return;
     }
     const precededByComma = tokens.at(-2) === COMMA;
-    const wordsBeforeComma = precededByComma ? countWords(tokens.slice(0, -2)) : 0;
-    if (!isSuffix(last, precededByComma, wordsBeforeComma, minWordsBeforeComma)) {
+    const wordsBeforeComma = precededByComma
+      ? countWords(tokens.slice(0, -2))
+      : 0;
+    if (
+      !isSuffix(last, precededByComma, wordsBeforeComma, minWordsBeforeComma)
+    ) {
       return;
     }
     tokens.pop();
@@ -152,7 +167,10 @@ function stripTrailingSuffixes(tokens: string[], minWordsBeforeComma: number): v
 }
 
 function stripLeadingTitles(words: string[], minRemaining: number): void {
-  while (words.length > minRemaining && LEADING_TITLES.has(bareForm(words[0] ?? ""))) {
+  while (
+    words.length > minRemaining &&
+    LEADING_TITLES.has(bareForm(words[0] ?? ""))
+  ) {
     words.shift();
   }
 }
@@ -168,7 +186,12 @@ function familyStartIndex(words: readonly string[]): number {
       if (phraseStart < 1) {
         continue;
       }
-      if (phrase.every((part, offset) => bareForm(words[phraseStart + offset] ?? "") === part)) {
+      if (
+        phrase.every(
+          (part, offset) =>
+            bareForm(words[phraseStart + offset] ?? "") === part,
+        )
+      ) {
         start = phraseStart;
         absorbed = true;
         break;
@@ -178,14 +201,20 @@ function familyStartIndex(words: readonly string[]): number {
   return start;
 }
 
-function buildParsedName(given: string, middles: readonly string[], familyWords: readonly string[]): ParsedName | null {
+function buildParsedName(
+  given: string,
+  middles: readonly string[],
+  familyWords: readonly string[],
+): ParsedName | null {
   const family = familyWords.join(" ");
   const givenKey = nameKey(given);
   const familyKey = nameKey(family);
   if (givenKey === "" || familyKey === "") {
     return null;
   }
-  const familyParts = family.split(/[\s\-\u2010-\u2015]+/).filter((part) => nameKey(part) !== "");
+  const familyParts = family
+    .split(/[\s\-\u2010-\u2015]+/)
+    .filter((part) => nameKey(part) !== "");
   const familyFinal = familyParts.at(-1) ?? family;
   return {
     given,
@@ -209,7 +238,9 @@ export function parseInstructor(raw: string): ParsedName | null {
   if (isPlaceholder(text)) {
     return null;
   }
-  const tokens = tokenize(dropParentheticals(text).replace(/\b(Ph|Ed)\.\s+D\b\.?/gi, "$1.D."));
+  const tokens = tokenize(
+    dropParentheticals(text).replace(/\b(Ph|Ed)\.\s+D\b\.?/gi, "$1.D."),
+  );
   stripTrailingSuffixes(tokens, 2);
 
   const commaIndex = tokens.indexOf(COMMA);
@@ -230,7 +261,11 @@ export function parseInstructor(raw: string): ParsedName | null {
     return null;
   }
   const familyStart = familyStartIndex(words);
-  return buildParsedName(given, words.slice(1, familyStart), words.slice(familyStart));
+  return buildParsedName(
+    given,
+    words.slice(1, familyStart),
+    words.slice(familyStart),
+  );
 }
 
 /** Family-name key for a Rate My Professors `lastName` field, which can carry its own suffix. */
@@ -240,23 +275,36 @@ export function rmpFamilyKey(lastName: string): string {
   return nameKey(tokens.filter((token) => token !== COMMA).join(" "));
 }
 
-export function rmpNameKeys(firstName: string, lastName: string): PersonKeys | null {
-  const givenWords = tokenize(dropParentheticals(cleanText(firstName)).replace(/"[^"]*"|“[^”]*”/g, " "))
-    .filter((token) => token !== COMMA);
+export function rmpNameKeys(
+  firstName: string,
+  lastName: string,
+): PersonKeys | null {
+  const givenWords = tokenize(
+    dropParentheticals(cleanText(firstName)).replace(/"[^"]*"|“[^”]*”/g, " "),
+  ).filter((token) => token !== COMMA);
   stripLeadingTitles(givenWords, 1);
   const [given, ...middles] = givenWords;
   const familyKey = rmpFamilyKey(lastName);
   if (given === undefined || familyKey === "") {
     return null;
   }
-  return { givenKey: nameKey(given), middleKeys: middles.map(nameKey), familyKey };
+  return {
+    givenKey: nameKey(given),
+    middleKeys: middles.map(nameKey),
+    familyKey,
+  };
 }
 
 function isTrimmable(char: string | undefined): boolean {
   return char !== undefined && SEGMENT_TRIM.test(char);
 }
 
-function pushSegment(segments: InstructorSegment[], text: string, from: number, to: number): void {
+function pushSegment(
+  segments: InstructorSegment[],
+  text: string,
+  from: number,
+  to: number,
+): void {
   let start = from;
   let end = to;
   while (start < end && isTrimmable(text[start])) {
@@ -313,7 +361,10 @@ export function instructorSegments(text: string): InstructorSegment[] {
         pushSegment(segments, text, segmentStart, index + 1);
         segmentStart = index + 1;
       }
-    } else if ((char === ";" || char === "\n" || char === "\r") && depth === 0) {
+    } else if (
+      (char === ";" || char === "\n" || char === "\r") &&
+      depth === 0
+    ) {
       pushSegment(segments, text, segmentStart, index);
       segmentStart = index + 1;
     }
@@ -338,7 +389,11 @@ export interface InstructorCellNode {
 }
 
 function isInstructorAnchor(node: InstructorCellNode): boolean {
-  if (node.nodeType !== ELEMENT_NODE || node.nodeName.toUpperCase() !== "A" || typeof node.className !== "string") {
+  if (
+    node.nodeType !== ELEMENT_NODE ||
+    node.nodeName.toUpperCase() !== "A" ||
+    typeof node.className !== "string"
+  ) {
     return false;
   }
   return node.className.split(/\s+/).includes("instructor-contact-link");
@@ -351,7 +406,8 @@ function isInstructorAnchor(node: InstructorCellNode): boolean {
  * cell has no instructor link.
  */
 export function instructorTextsFromCell(cell: InstructorCellNode): string[] {
-  const children = cell.childNodes === undefined ? [] : Array.from(cell.childNodes);
+  const children =
+    cell.childNodes === undefined ? [] : Array.from(cell.childNodes);
   let sawAnchor = false;
   const names: string[] = [];
   for (const child of children) {

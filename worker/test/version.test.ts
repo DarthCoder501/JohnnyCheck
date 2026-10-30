@@ -24,12 +24,16 @@ describe("GET /v1/version", () => {
     const response = await call(API_PATHS.version);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
-    expect(parseVersionResponse(await response.json())).toEqual({ cacheVersion: 1 });
+    expect(parseVersionResponse(await response.json())).toEqual({
+      cacheVersion: 1,
+    });
   });
 
   it("uses the cacheVersion from the env, not a hardcoded 1", async () => {
     const response = await call(`${API_PATHS.version}?t=1`, "GET", 4);
-    expect(parseVersionResponse(await response.json())).toEqual({ cacheVersion: 4 });
+    expect(parseVersionResponse(await response.json())).toEqual({
+      cacheVersion: 4,
+    });
   });
 
   it("returns 404 for every other path and method", async () => {
@@ -40,6 +44,8 @@ describe("GET /v1/version", () => {
       call(API_PATHS.version, "POST"),
       call("/privacy", "POST"),
     ]);
-    expect(misses.map((response) => response.status)).toEqual([404, 404, 404, 404, 404]);
+    expect(misses.map((response) => response.status)).toEqual([
+      404, 404, 404, 404, 404,
+    ]);
   });
 });

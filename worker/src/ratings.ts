@@ -18,7 +18,11 @@ import { loadSchoolTeachers, type FetchBudget } from "./rmp";
 
 export interface RatingsKv {
   get(key: string): Promise<string | null>;
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  put(
+    key: string,
+    value: string,
+    options?: { expirationTtl?: number },
+  ): Promise<void>;
 }
 
 export interface Env {
@@ -27,7 +31,9 @@ export interface Env {
   RATINGS: RatingsKv;
 }
 
-function isHit(result: RatingResult): result is Extract<RatingResult, { status: "rated" | "unrated" }> {
+function isHit(
+  result: RatingResult,
+): result is Extract<RatingResult, { status: "rated" | "unrated" }> {
   return result.status === "rated" || result.status === "unrated";
 }
 
@@ -45,7 +51,9 @@ function deduped(teachers: readonly Teacher[]): Teacher[] {
 }
 
 /** One person on an unfinished broad search is not unique across the four listings. */
-function asPossible(result: Extract<RatingResult, { status: "rated" | "unrated" }>): RatingResult {
+function asPossible(
+  result: Extract<RatingResult, { status: "rated" | "unrated" }>,
+): RatingResult {
   if (result.match === "possible") {
     return result;
   }
@@ -55,7 +63,11 @@ function asPossible(result: Extract<RatingResult, { status: "rated" | "unrated" 
   return { ...result, match: "possible", reasons };
 }
 
-async function readFresh(kv: RatingsKv, key: string, nowMs: number): Promise<RatingResult | null> {
+async function readFresh(
+  kv: RatingsKv,
+  key: string,
+  nowMs: number,
+): Promise<RatingResult | null> {
   let raw: string | null;
   try {
     raw = await kv.get(key);
@@ -91,7 +103,9 @@ async function storeHit(
     return;
   }
   try {
-    await kv.put(key, JSON.stringify(stored), { expirationTtl: result.ttlSeconds });
+    await kv.put(key, JSON.stringify(stored), {
+      expirationTtl: result.ttlSeconds,
+    });
     written.add(key);
   } catch {
     console.warn(JSON.stringify({ event: "kv_write_failed" }));
@@ -148,7 +162,10 @@ async function searchSchools(
   return ranked;
 }
 
-export async function handleRatings(request: Request, env: Env): Promise<Response> {
+export async function handleRatings(
+  request: Request,
+  env: Env,
+): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -164,7 +181,13 @@ export async function handleRatings(request: Request, env: Env): Promise<Respons
   const budget: FetchBudget = { used: 0, max: MAX_UPSTREAM_FETCHES };
   const written = new Set<string>();
   const results: Record<string, RatingResult> = {};
-  const counts = { skipped: 0, rated: 0, unrated: 0, not_listed: 0, unavailable: 0 };
+  const counts = {
+    skipped: 0,
+    rated: 0,
+    unrated: 0,
+    not_listed: 0,
+    unavailable: 0,
+  };
 
   for (const item of parsed.request.items) {
     const name = parseInstructor(item.name);
@@ -172,9 +195,15 @@ export async function handleRatings(request: Request, env: Env): Promise<Respons
       counts.skipped += 1;
       continue;
     }
-    const key = localCacheKey(env.cacheVersion, item.campus, item.subject, name);
+    const key = localCacheKey(
+      env.cacheVersion,
+      item.campus,
+      item.subject,
+      name,
+    );
     const cached = await readFresh(env.RATINGS, key, nowMs);
-    const result = cached ?? (await searchSchools(item, name, env, budget, nowMs));
+    const result =
+      cached ?? (await searchSchools(item, name, env, budget, nowMs));
     if (cached === null) {
       await storeHit(env.RATINGS, key, result, nowMs, written);
     }
