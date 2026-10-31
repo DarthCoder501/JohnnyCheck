@@ -1,24 +1,44 @@
 .rspr-chip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   box-sizing: border-box;
   min-height: 24px;
   margin: 0;
   padding: 4px 0;
   background: transparent;
-  color: #222222;
+  color: #5c6570;
   font-family: Arial, sans-serif;
   font-size: 12px;
   line-height: 16px;
   white-space: normal;
   text-decoration: none;
 }
-a.rspr-chip {
+.rspr-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.rspr-note {
+  color: #6b6258;
+}
+a.rspr-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-height: 24px;
+  color: #148280;
   cursor: pointer;
   text-decoration: underline;
 }
-.rspr-chip:focus-visible {
+.rspr-out {
+  text-decoration: none;
+}
+.rspr-chip:focus-visible,
+a.rspr-score:focus-visible {
   outline: 2px solid #000;
   outline-offset: 2px;
 }
@@ -28,6 +48,7 @@ a.rspr-chip {
   box-sizing: border-box;
   width: 6px;
   height: 6px;
+  margin-top: 5px;
   background: #148280;
   transform: rotate(45deg);
 }
@@ -39,5 +60,9 @@ td.rspr-open {
   .rspr-mark {
     background: CanvasText;
     border: 1px solid CanvasText;
+  }
+  .rspr-note,
+  a.rspr-score {
+    color: CanvasText;
   }
 }

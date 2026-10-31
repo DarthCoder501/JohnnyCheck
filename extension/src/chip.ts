@@ -5,13 +5,10 @@ export type ChipPaint = "loading" | RatingResult;
 
 const ELEMENT_NODE = 1;
 
-function visibleLabel(paint: ChipPaint): string {
-  if (paint === "loading") return "";
-  if (paint.status === "not_listed") return "not listed";
-  if (paint.status === "unavailable") return "ratings unavailable";
-  if (paint.status === "unrated") return "No ratings yet";
-  const line = `${paint.quality.toFixed(1)} · ${paint.numRatings}`;
-  return paint.match === "possible" ? `${line} possible` : line;
+function scoreLabel(paint: Extract<RatingResult, { legacyId: number }>): string {
+  if (paint.status === "unrated") return "No Ratings Yet";
+  const reviews = paint.numRatings === 1 ? "review" : "reviews";
+  return `${paint.quality.toFixed(1)}/5 · ${paint.numRatings} ${reviews}`;
 }
 
 function accessibleName(person: string, paint: ChipPaint): string | null {
@@ -76,25 +73,49 @@ function createChip(
   paint: ChipPaint,
 ): HTMLElement {
   const profile = isProfile(paint);
-  const chip = doc.createElement(profile ? "a" : "span");
+  const chip = doc.createElement("span");
   chip.className = "rspr-chip";
   const mark = doc.createElement("span");
   mark.className = "rspr-mark";
   mark.setAttribute("aria-hidden", "true");
   chip.append(mark);
-  const label = visibleLabel(paint);
-  if (label !== "") chip.append(doc.createTextNode(label));
-  const name =
-    paint === "loading" ? "Loading ratings" : accessibleName(person, paint);
-  if (name !== null) {
-    chip.setAttribute("aria-label", name);
-    if (profile) chip.setAttribute("title", name);
+  const lines = doc.createElement("span");
+  lines.className = "rspr-lines";
+  if (profile && paint.match === "possible") {
+    const note = doc.createElement("span");
+    note.className = "rspr-note";
+    note.textContent = "Possible Match";
+    lines.append(note);
   }
   if (profile) {
-    chip.setAttribute("href", rmpProfileUrl(paint.legacyId));
-    chip.setAttribute("target", "_blank");
-    chip.setAttribute("rel", "noopener noreferrer");
+    const link = doc.createElement("a");
+    link.className = "rspr-score";
+    link.append(doc.createTextNode(scoreLabel(paint)));
+    if (paint.status === "rated") {
+      const arrow = doc.createElement("span");
+      arrow.className = "rspr-out";
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = "↗";
+      link.append(arrow);
+    }
+    const name = accessibleName(person, paint);
+    if (name !== null) {
+      link.setAttribute("aria-label", name);
+      link.setAttribute("title", name);
+    }
+    link.setAttribute("href", rmpProfileUrl(paint.legacyId));
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer");
+    lines.append(link);
+  } else if (paint !== "loading") {
+    lines.append(
+      doc.createTextNode(
+        paint.status === "not_listed" ? "Not Listed" : "Ratings Unavailable",
+      ),
+    );
   }
+  if (lines.childNodes.length > 0) chip.append(lines);
+  if (paint === "loading") chip.setAttribute("aria-label", "Loading ratings");
   for (const type of ["click", "mousedown", "mouseup", "keydown"]) {
     chip.addEventListener(type, stopRowEvent);
   }

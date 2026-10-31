@@ -7,7 +7,11 @@ const PAGE = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy policy</title>
 <style>
+  html { height: 100%; }
   body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
     margin: 0;
     background: #ffffff;
     color: #222222;
@@ -16,7 +20,9 @@ const PAGE = `<!DOCTYPE html>
     line-height: 1.5;
   }
   header, footer { background: #148280; color: #ffffff; }
-  .band, main, footer p {
+  .wrap {
+    box-sizing: border-box;
+    width: 100%;
     max-width: 40rem;
     margin: 0 auto;
     padding-left: 16px;
@@ -44,7 +50,11 @@ const PAGE = `<!DOCTYPE html>
     background: #ffffff;
     transform: rotate(45deg);
   }
-  main { padding-top: 32px; padding-bottom: 32px; }
+  main {
+    flex: 1 0 auto;
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
   .page-title {
     margin: 0 0 8px;
     padding-bottom: 8px;
@@ -71,6 +81,10 @@ const PAGE = `<!DOCTYPE html>
     color: #f9fafb;
     font-size: 14px;
     line-height: 20px;
+    text-align: left;
+  }
+  @media (min-width: 1024px) {
+    .wrap { max-width: 48rem; }
   }
   @media (forced-colors: active) {
     header, footer { background: Canvas; color: CanvasText; }
@@ -85,12 +99,12 @@ const PAGE = `<!DOCTYPE html>
 </head>
 <body>
 <header>
-<div class="band">
+<div class="wrap band">
 <span class="mark" aria-hidden="true"></span>
 <h1>Red Storm Professor Ratings</h1>
 </div>
 </header>
-<main>
+<main class="wrap">
 <p class="page-title">Privacy Policy</p>
 <p>What is sent, how results are cached, and what is not collected.</p>
 <p>In short: Red Storm reads the instructor name, campus, and subject description from a class search row to look up a public rating. It also sends a random installation ID for rate limits. No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
@@ -104,7 +118,9 @@ const PAGE = `<!DOCTYPE html>
 <p>No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
 </main>
 <footer>
+<div class="wrap">
 <p>Unofficial. Not affiliated with St. John's University, Rate My Professors, or Ellucian.</p>
+</div>
 </footer>
 </body>
 </html>

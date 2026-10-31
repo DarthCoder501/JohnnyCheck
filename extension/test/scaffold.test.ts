@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
 import { runContentScript } from "../src/content-script";
@@ -9,6 +9,8 @@ const manifest = JSON.parse(
   permissions: string[];
   host_permissions: string[];
   content_scripts: { matches: string[] }[];
+  icons?: { [size: string]: string };
+  action?: { default_icon?: { [size: string]: string } };
 };
 
 const BANNER =
@@ -74,5 +76,19 @@ describe("extension scaffold", () => {
       ),
     ].join("\n");
     expect(source).not.toMatch(/rmpToken|Bearer /);
+  });
+
+  it("ships the Generated icon as the extension and toolbar PNGs", () => {
+    const icons = {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png",
+    };
+    expect(manifest.icons).toEqual(icons);
+    expect(manifest.action?.default_icon).toEqual(icons);
+    for (const path of Object.values(icons)) {
+      expect(existsSync(new URL(`../${path}`, import.meta.url))).toBe(true);
+    }
   });
 });

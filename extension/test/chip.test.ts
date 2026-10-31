@@ -10,25 +10,45 @@ import { paintInstructorCell, type ChipPaint } from "../src/chip";
 
 const CONTENT_CSS = `.rspr-chip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   box-sizing: border-box;
   min-height: 24px;
   margin: 0;
   padding: 4px 0;
   background: transparent;
-  color: #222222;
+  color: #5c6570;
   font-family: Arial, sans-serif;
   font-size: 12px;
   line-height: 16px;
   white-space: normal;
   text-decoration: none;
 }
-a.rspr-chip {
+.rspr-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.rspr-note {
+  color: #6b6258;
+}
+a.rspr-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  min-height: 24px;
+  color: #148280;
   cursor: pointer;
   text-decoration: underline;
 }
-.rspr-chip:focus-visible {
+.rspr-out {
+  text-decoration: none;
+}
+.rspr-chip:focus-visible,
+a.rspr-score:focus-visible {
   outline: 2px solid #000;
   outline-offset: 2px;
 }
@@ -38,6 +58,7 @@ a.rspr-chip {
   box-sizing: border-box;
   width: 6px;
   height: 6px;
+  margin-top: 5px;
   background: #148280;
   transform: rotate(45deg);
 }
@@ -49,6 +70,10 @@ td.rspr-open {
   .rspr-mark {
     background: CanvasText;
     border: 1px solid CanvasText;
+  }
+  .rspr-note,
+  a.rspr-score {
+    color: CanvasText;
   }
 }
 `;
@@ -119,8 +144,9 @@ describe("extension chip", () => {
   it("renders every painted state with the same teal diamond and no RMP prefix", () => {
     const states: { paint: ChipPaint; text: string }[] = [
       { paint: "loading", text: "" },
-      { paint: rated("exact"), text: "4.5 · 28" },
-      { paint: rated("possible"), text: "4.5 · 28 possible" },
+      { paint: rated("exact"), text: "4.5/5 · 28 reviews↗" },
+      { paint: rated("possible"), text: "Possible Match4.5/5 · 28 reviews↗" },
+      { paint: rated("exact", 1), text: "4.5/5 · 1 review↗" },
       {
         paint: {
           status: "unrated",
@@ -136,10 +162,10 @@ describe("extension chip", () => {
           wouldTakeAgain: null,
           ttlSeconds: 1,
         },
-        text: "No ratings yet",
+        text: "No Ratings Yet",
       },
-      { paint: { status: "not_listed", ttlSeconds: 1 }, text: "not listed" },
-      { paint: { status: "unavailable" }, text: "ratings unavailable" },
+      { paint: { status: "not_listed", ttlSeconds: 1 }, text: "Not Listed" },
+      { paint: { status: "unavailable" }, text: "Ratings Unavailable" },
     ];
     for (const state of states) {
       const [chip] = paint(CAPTURED, [state.paint]);
@@ -150,16 +176,24 @@ describe("extension chip", () => {
       if (state.paint === "loading")
         expect(chip?.getAttribute("aria-label")).toBe("Loading ratings");
       expect(markFill(chip!)).toMatch(/rgb\(20,\s*130,\s*128\)|#148280/i);
-      const words =
-        chip?.ownerDocument.defaultView?.getComputedStyle(chip).color ?? "";
-      expect(words).toMatch(/rgb\(34,\s*34,\s*34\)|#222222/i);
+      const view = chip?.ownerDocument.defaultView;
+      const score = chip?.querySelector("a.rspr-score");
+      const painted =
+        score !== null && score !== undefined
+          ? view?.getComputedStyle(score).color
+          : view?.getComputedStyle(chip!).color;
+      const expected =
+        score !== null && score !== undefined
+          ? /rgb\(20,\s*130,\s*128\)|#148280/i
+          : /rgb\(92,\s*101,\s*112\)|#5c6570/i;
+      expect(painted ?? "").toMatch(expected);
     }
     expect(paint("<td></td>", ["loading"])).toEqual([]);
     expect(paint("<td>TBA</td>", ["loading"])).toEqual([]);
   });
 
   it("links a profile and leaves not listed and ratings unavailable as spans", () => {
-    const profile = paint(CAPTURED, [rated("exact")])[0];
+    const profile = paint(CAPTURED, [rated("exact")])[0]?.querySelector("a");
     expect(profile?.tagName).toBe("A");
     expect(profile?.getAttribute("href")).toBe(rmpProfileUrl(4242));
     expect(profile?.getAttribute("target")).toBe("_blank");
@@ -169,7 +203,10 @@ describe("extension chip", () => {
     expect(profile?.getAttribute("title")).toBe(name);
 
     const possible = paint(CAPTURED, [rated("possible")])[0];
-    expect(possible?.getAttribute("aria-label")).toBe(
+    expect(possible?.querySelector(".rspr-note")?.textContent).toBe(
+      "Possible Match",
+    );
+    expect(possible?.querySelector("a")?.getAttribute("aria-label")).toBe(
       "Geoffrey Norman Dick, Rate My Professors, possible match",
     );
 
@@ -189,8 +226,9 @@ describe("extension chip", () => {
         ttlSeconds: 1,
       },
     ])[0];
-    expect(unrated?.tagName).toBe("A");
-    expect(unrated?.getAttribute("aria-label")).toBe(
+    expect(unrated?.querySelector("a")?.tagName).toBe("A");
+    expect(unrated?.querySelector(".rspr-out")).toBeNull();
+    expect(unrated?.querySelector("a")?.getAttribute("aria-label")).toBe(
       "Geoffrey Norman Dick, Rate My Professors, no ratings yet",
     );
 
@@ -223,7 +261,8 @@ describe("extension chip", () => {
     expect(
       td.querySelector("a.instructor-contact-link")?.getAttribute("href"),
     ).toBe("mailto:REDACTED");
-    expect(chips[1]?.textContent).toContain("4.5 · 4 possible");
+    expect(chips[1]?.textContent).toContain("Possible Match");
+    expect(chips[1]?.textContent).toContain("4.5/5 · 4 reviews");
   });
 
   it("stops click, mousedown, mouseup, and Enter without canceling Enter", () => {
@@ -250,7 +289,7 @@ describe("extension chip", () => {
     });
     link?.dispatchEvent(enter);
     expect(enter.defaultPrevented).toBe(false);
-    expect(link?.tagName).toBe("A");
+    expect(link?.querySelector("a")?.tagName).toBe("A");
     const other = new view.KeyboardEvent("keydown", {
       key: "a",
       bubbles: true,

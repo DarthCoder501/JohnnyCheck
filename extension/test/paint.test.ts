@@ -217,7 +217,7 @@ describe("extension paint", () => {
     });
     const after = Date.now();
 
-    expect(chip(window).textContent).toContain("not listed");
+    expect(chip(window).textContent).toContain("Not Listed");
     expect(local.sets).toHaveLength(1);
     const stored = local.values[key] as { expiresAt: number };
     expect(stored.expiresAt).toBeGreaterThanOrEqual(
@@ -231,7 +231,7 @@ describe("extension paint", () => {
     if (parent === null) throw new Error("parent missing");
     parent.innerHTML = grid("John Smith", "HISTORY");
     await window.happyDOM.waitUntilComplete();
-    expect(chip(window).textContent).toContain("not listed");
+    expect(chip(window).textContent).toContain("Not Listed");
     expect(messages).toHaveLength(1);
 
     const again = memoryLocal();
@@ -241,7 +241,7 @@ describe("extension paint", () => {
       cacheVersion: 1,
       results: { [key]: unavailableResult() },
     });
-    expect(chip(second).textContent).toContain("ratings unavailable");
+    expect(chip(second).textContent).toContain("Ratings Unavailable");
     expect(again.sets).toEqual([]);
 
     const expired = memoryLocal({

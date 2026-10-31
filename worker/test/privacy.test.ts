@@ -54,6 +54,10 @@ describe("GET /privacy", () => {
     expect(body).toContain("h1 {\n    margin: 0;\n    color: #ffffff;");
     expect(body).toMatch(/\.mark \{[^}]*width: 8px;[^}]*background: #ffffff/);
     expect(body).toContain("<footer>");
+    expect(body).toContain('class="wrap band"');
+    expect(body).toContain('<main class="wrap">');
+    expect(body).toContain('<footer>\n<div class="wrap">');
+    expect(body).toContain("max-width: 40rem");
     const header = body.slice(
       body.indexOf("<header>"),
       body.indexOf("</header>"),

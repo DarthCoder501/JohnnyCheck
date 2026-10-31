@@ -74,27 +74,32 @@ test("chip states, hit size, and keyboard behavior", async ({ page }) => {
   );
 
   await expect(page.locator("#loading .rspr-chip")).toHaveAttribute("aria-label", "Loading ratings");
-  await expect(page.locator("#rated .rspr-chip")).toHaveText("4.5 · 28");
-  await expect(page.locator("#possible .rspr-chip")).toContainText("4.5 · 4 possible");
-  await expect(page.locator("#unrated .rspr-chip")).toHaveText("No ratings yet");
-  await expect(page.locator("#missing .rspr-chip")).toHaveText("not listed");
-  await expect(page.locator("#down .rspr-chip")).toHaveText("ratings unavailable");
+  await expect(page.locator("#rated .rspr-score")).toHaveText("4.5/5 · 28 reviews↗");
+  await expect(page.locator("#possible .rspr-chip")).toContainText("Possible Match");
+  await expect(page.locator("#possible .rspr-score")).toHaveText("4.5/5 · 4 reviews↗");
+  await expect(page.locator("#unrated .rspr-chip")).toHaveText("No Ratings Yet");
+  await expect(page.locator("#unrated .rspr-out")).toHaveCount(0);
+  await expect(page.locator("#missing .rspr-chip")).toHaveText("Not Listed");
+  await expect(page.locator("#down .rspr-chip")).toHaveText("Ratings Unavailable");
   await expect(page.locator("#empty .rspr-mark, #tba .rspr-mark")).toHaveCount(0);
   await expect(page.locator("#two .rspr-chip")).toHaveCount(2);
   await expect(page.locator("#rated a.instructor-contact-link")).toHaveAttribute("href", "mailto:redacted");
-  await expect(page.locator("#rated .rspr-chip")).toHaveAttribute("href", "https://www.ratemyprofessors.com/professor/4242");
+  await expect(page.locator("#rated .rspr-score")).toHaveAttribute("href", "https://www.ratemyprofessors.com/professor/4242");
   await expect(page.locator("#missing .rspr-chip")).toHaveJSProperty("tagName", "SPAN");
-  await expect(page.locator("#rated .rspr-chip")).toHaveAttribute(
+  await expect(page.locator("#rated .rspr-score")).toHaveAttribute(
     "aria-label",
     "Geoffrey Norman Dick, Rate My Professors, 28 ratings",
   );
   for (const id of ["rated", "missing"]) {
     const mark = page.locator(`#${id} .rspr-mark`);
     await expect(mark).toHaveCSS("background-color", "rgb(20, 130, 128)");
-    await expect(page.locator(`#${id} .rspr-chip`)).toHaveCSS("color", "rgb(34, 34, 34)");
     const box = await page.locator(`#${id} .rspr-chip`).boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(24);
   }
+  await expect(page.locator("#rated .rspr-score")).toHaveCSS("color", "rgb(20, 130, 128)");
+  await expect(page.locator("#missing .rspr-chip")).toHaveCSS("color", "rgb(92, 101, 112)");
+  const scoreBox = await page.locator("#rated .rspr-score").boundingBox();
+  expect(scoreBox?.height).toBeGreaterThanOrEqual(24);
   expect(await page.locator("#rated .rspr-chip").innerText()).not.toMatch(/^RMP/);
 
   const bubbled = await page.evaluate(() => {
@@ -112,7 +117,7 @@ test("chip states, hit size, and keyboard behavior", async ({ page }) => {
   expect(bubbled).toEqual({ clicks: 0, canceled: false });
 
   const popupPromise = page.waitForEvent("popup");
-  await page.locator("#rated .rspr-chip").focus();
+  await page.locator("#rated .rspr-score").focus();
   await page.keyboard.press("Enter");
   const popup = await popupPromise;
   await expect(popup).toHaveURL(/ratemyprofessors\.com\/(professor\/4242|teacher-not-found)/);
