@@ -74,9 +74,10 @@ test("chip states, hit size, and keyboard behavior", async ({ page }) => {
   );
 
   await expect(page.locator("#loading .rspr-chip")).toHaveAttribute("aria-label", "Loading ratings");
-  await expect(page.locator("#rated .rspr-score")).toHaveText("4.5/5 · 28 reviews↗");
+  await expect(page.locator("#rated .rspr-chip")).toContainText("4.5/5 · 28 Reviews");
+  await expect(page.locator("#rated .rspr-score")).toHaveText("28 Reviews↗");
   await expect(page.locator("#possible .rspr-chip")).toContainText("Possible Match");
-  await expect(page.locator("#possible .rspr-score")).toHaveText("4.5/5 · 4 reviews↗");
+  await expect(page.locator("#possible .rspr-score")).toHaveText("4 Reviews↗");
   await expect(page.locator("#unrated .rspr-chip")).toHaveText("No Ratings Yet");
   await expect(page.locator("#unrated .rspr-out")).toHaveCount(0);
   await expect(page.locator("#missing .rspr-chip")).toHaveText("Not Listed");
@@ -90,14 +91,44 @@ test("chip states, hit size, and keyboard behavior", async ({ page }) => {
     "aria-label",
     "Geoffrey Norman Dick, Rate My Professors, 28 ratings",
   );
+  await expect(page.locator("#rated .rspr-mark")).toHaveCSS("background-color", "rgb(20, 130, 128)");
+  await expect(page.locator("#missing .rspr-mark")).toHaveCSS("background-color", "rgb(197, 203, 211)");
   for (const id of ["rated", "missing"]) {
-    const mark = page.locator(`#${id} .rspr-mark`);
-    await expect(mark).toHaveCSS("background-color", "rgb(20, 130, 128)");
     const box = await page.locator(`#${id} .rspr-chip`).boundingBox();
     expect(box?.height).toBeGreaterThanOrEqual(24);
   }
-  await expect(page.locator("#rated .rspr-score")).toHaveCSS("color", "rgb(20, 130, 128)");
-  await expect(page.locator("#missing .rspr-chip")).toHaveCSS("color", "rgb(92, 101, 112)");
+  await expect(page.locator("#rated .rspr-grade")).toHaveCSS("color", "rgb(15, 107, 58)");
+  await expect(page.locator("#rated .rspr-grade")).toHaveCSS("font-weight", "700");
+  await expect(page.locator("#rated .rspr-grade")).toHaveCSS("text-decoration-line", "none");
+  await expect(page.locator("#rated .rspr-meta")).toHaveCSS("color", "rgb(15, 107, 58)");
+  await expect(page.locator("#rated .rspr-meta")).toHaveCSS("font-weight", "400");
+  await expect(page.locator("#rated .rspr-meta")).toHaveCSS("text-decoration-line", "underline");
+  await expect(page.locator("#rated .rspr-out")).toHaveCSS("color", "rgb(15, 107, 58)");
+  await expect(page.locator("#rated .rspr-out")).toHaveCSS("text-decoration-line", "none");
+  await page.locator("#rated .rspr-meta").hover();
+  await expect(page.locator("#rated .rspr-score")).toHaveCSS("background-color", "rgb(231, 246, 238)");
+  const hovered = await page.locator("#rated .rspr-score").boundingBox();
+  const gradeBox = await page.locator("#rated .rspr-grade").boundingBox();
+  expect(hovered).toBeTruthy();
+  expect(gradeBox).toBeTruthy();
+  expect((hovered?.x ?? 0) + (hovered?.width ?? 0)).toBeGreaterThan((gradeBox?.x ?? 0) + (gradeBox?.width ?? 0));
+  await expect(page.locator("#possible .rspr-note")).toHaveCSS("color", "rgb(122, 78, 0)");
+  await expect(page.locator("#possible .rspr-note")).toHaveCSS("font-weight", "400");
+  await expect(page.locator("#rated")).toHaveCSS("padding-top", "8px");
+  await expect(page.locator("#rated")).toHaveCSS("padding-bottom", "8px");
+  await expect(page.locator("#rated")).toHaveCSS("vertical-align", "middle");
+  const possibleScore = await page.locator("#possible .rspr-score").boundingBox();
+  const possibleNote = await page.locator("#possible .rspr-note").boundingBox();
+  expect(possibleScore).toBeTruthy();
+  expect(possibleNote).toBeTruthy();
+  expect(Math.abs((possibleScore?.y ?? 0) - (possibleNote?.y ?? 0))).toBeLessThan(8);
+  await expect(page.locator("#missing .rspr-plain")).toHaveCSS("color", "rgb(92, 101, 112)");
+  await expect(page.locator("#missing .rspr-plain")).toHaveCSS("font-weight", "400");
+  const missingMark = await page.locator("#missing .rspr-mark").boundingBox();
+  const missingPlain = await page.locator("#missing .rspr-plain").boundingBox();
+  expect(missingMark).toBeTruthy();
+  expect(missingPlain).toBeTruthy();
+  expect(Math.abs((missingMark?.y ?? 0) - (missingPlain?.y ?? 0))).toBeLessThan(8);
   const scoreBox = await page.locator("#rated .rspr-score").boundingBox();
   expect(scoreBox?.height).toBeGreaterThanOrEqual(24);
   expect(await page.locator("#rated .rspr-chip").innerText()).not.toMatch(/^RMP/);

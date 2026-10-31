@@ -100,6 +100,7 @@ describe("extension toggle", () => {
     await window.happyDOM.waitUntilComplete();
     expect(chips(window)).toHaveLength(0);
     expect(window.document.querySelectorAll(".rspr-chip")).toHaveLength(0);
+    expect(window.document.querySelectorAll("td.rspr-cell")).toHaveLength(0);
   });
 
   it("does not insert a chip when a ratings reply arrives after the observer stops", async () => {

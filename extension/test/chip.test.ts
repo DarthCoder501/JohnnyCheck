@@ -8,75 +8,10 @@ import {
 } from "../../shared/src/contract";
 import { paintInstructorCell, type ChipPaint } from "../src/chip";
 
-const CONTENT_CSS = `.rspr-chip {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  box-sizing: border-box;
-  min-height: 24px;
-  margin: 0;
-  padding: 4px 0;
-  background: transparent;
-  color: #5c6570;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  line-height: 16px;
-  white-space: normal;
-  text-decoration: none;
-}
-.rspr-lines {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-}
-.rspr-note {
-  color: #6b6258;
-}
-a.rspr-score {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-sizing: border-box;
-  min-height: 24px;
-  color: #148280;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.rspr-out {
-  text-decoration: none;
-}
-.rspr-chip:focus-visible,
-a.rspr-score:focus-visible {
-  outline: 2px solid #000;
-  outline-offset: 2px;
-}
-.rspr-mark {
-  display: block;
-  flex: none;
-  box-sizing: border-box;
-  width: 6px;
-  height: 6px;
-  margin-top: 5px;
-  background: #148280;
-  transform: rotate(45deg);
-}
-td.rspr-open {
-  height: auto;
-  max-height: none;
-}
-@media (forced-colors: active) {
-  .rspr-mark {
-    background: CanvasText;
-    border: 1px solid CanvasText;
-  }
-  .rspr-note,
-  a.rspr-score {
-    color: CanvasText;
-  }
-}
-`;
+const CONTENT_CSS = readFileSync(
+  new URL("../content.css", import.meta.url),
+  "utf8",
+);
 
 const CAPTURED = `<td data-property="instructor"><a class="email instructor-contact-link" aria-haspopup="true" data-banner-id="REDACTED" data-term="REDACTED" href="mailto:REDACTED">Geoffrey Norman Dick</a> (Primary)<br></td>`;
 
@@ -144,9 +79,9 @@ describe("extension chip", () => {
   it("renders every painted state with the same teal diamond and no RMP prefix", () => {
     const states: { paint: ChipPaint; text: string }[] = [
       { paint: "loading", text: "" },
-      { paint: rated("exact"), text: "4.5/5 · 28 reviews↗" },
-      { paint: rated("possible"), text: "Possible Match4.5/5 · 28 reviews↗" },
-      { paint: rated("exact", 1), text: "4.5/5 · 1 review↗" },
+      { paint: rated("exact"), text: "4.5/5 · 28 Reviews↗" },
+      { paint: rated("possible"), text: "4.5/5 · 28 Reviews↗Possible Match" },
+      { paint: rated("exact", 1), text: "4.5/5 · 1 Review↗" },
       {
         paint: {
           status: "unrated",
@@ -175,21 +110,123 @@ describe("extension chip", () => {
       expect(chip?.querySelectorAll(".rspr-mark")).toHaveLength(1);
       if (state.paint === "loading")
         expect(chip?.getAttribute("aria-label")).toBe("Loading ratings");
-      expect(markFill(chip!)).toMatch(/rgb\(20,\s*130,\s*128\)|#148280/i);
+      const quiet =
+        state.paint !== "loading" && state.paint.status === "not_listed";
+      expect(markFill(chip!)).toMatch(
+        quiet
+          ? /rgb\(197,\s*203,\s*211\)|#c5cbd3/i
+          : /rgb\(20,\s*130,\s*128\)|#148280/i,
+      );
       const view = chip?.ownerDocument.defaultView;
-      const score = chip?.querySelector("a.rspr-score");
+      const grade = chip?.querySelector(".rspr-grade");
       const painted =
-        score !== null && score !== undefined
-          ? view?.getComputedStyle(score).color
+        grade !== null && grade !== undefined
+          ? view?.getComputedStyle(grade).color
           : view?.getComputedStyle(chip!).color;
       const expected =
-        score !== null && score !== undefined
-          ? /rgb\(20,\s*130,\s*128\)|#148280/i
+        grade !== null && grade !== undefined
+          ? /rgb\(15,\s*107,\s*58\)|#0f6b3a/i
           : /rgb\(92,\s*101,\s*112\)|#5c6570/i;
       expect(painted ?? "").toMatch(expected);
+      expect(chip?.parentElement?.classList.contains("rspr-cell")).toBe(true);
     }
     expect(paint("<td></td>", ["loading"])).toEqual([]);
     expect(paint("<td>TBA</td>", ["loading"])).toEqual([]);
+  });
+
+  it("keeps Possible Match gray and Not Listed on the diamond row against Banner bold teal", () => {
+    const td = cell(CAPTURED);
+    const hostile = td.ownerDocument.createElement("style");
+    hostile.textContent =
+      "td, td a, td span { color: #148280 !important; font-weight: 700 !important; display: block !important; }";
+    td.ownerDocument.head.append(hostile);
+    const possible = paintInstructorCell(td, [rated("possible")])[0]!;
+    const view = possible.ownerDocument.defaultView!;
+    const note = possible.querySelector(".rspr-note")!;
+    expect(view.getComputedStyle(note).color).toMatch(
+      /rgb\(122,\s*78,\s*0\)|#7a4e00/i,
+    );
+    expect(Number.parseInt(view.getComputedStyle(note).fontWeight, 10)).toBe(
+      400,
+    );
+    expect(view.getComputedStyle(note).display).toBe("inline-flex");
+    const noteBox = note.getBoundingClientRect();
+    const scoreBox = possible.querySelector(".rspr-score")!.getBoundingClientRect();
+    expect(Math.abs(noteBox.top - scoreBox.top)).toBeLessThan(8);
+    expect(
+      view.getComputedStyle(possible.querySelector(".rspr-row")!).display,
+    ).toBe("inline-flex");
+    const missingTd = cell(CAPTURED);
+    const missHostile = missingTd.ownerDocument.createElement("style");
+    missHostile.textContent = hostile.textContent;
+    missingTd.ownerDocument.head.append(missHostile);
+    const missing = paintInstructorCell(missingTd, [
+      { status: "not_listed", ttlSeconds: 1 },
+    ])[0]!;
+    const missView = missing.ownerDocument.defaultView!;
+    expect(
+      missView.getComputedStyle(missing.querySelector(".rspr-plain")!).color,
+    ).toMatch(/rgb\(92,\s*101,\s*112\)|#5c6570/i);
+    expect(
+      missView.getComputedStyle(missing.querySelector(".rspr-row")!).whiteSpace,
+    ).toBe("nowrap");
+    expect(
+      Number.parseInt(
+        missView.getComputedStyle(missing.querySelector(".rspr-plain")!).fontWeight,
+        10,
+      ),
+    ).toBe(400);
+    expect(markFill(missing)).toMatch(/rgb\(197,\s*203,\s*211\)|#c5cbd3/i);
+  });
+
+  it("colors the shown score green, amber, or red and keeps the band with the tenth", () => {
+    const bands: { quality: number; color: RegExp }[] = [
+      { quality: 4, color: /rgb\(15,\s*107,\s*58\)|#0f6b3a/i },
+      { quality: 3.95, color: /rgb\(15,\s*107,\s*58\)|#0f6b3a/i },
+      { quality: 3.9, color: /rgb\(122,\s*78,\s*0\)|#7a4e00/i },
+      { quality: 3, color: /rgb\(122,\s*78,\s*0\)|#7a4e00/i },
+      { quality: 2.94, color: /rgb\(159,\s*29,\s*28\)|#9f1d1c/i },
+    ];
+    for (const band of bands) {
+      const paintResult = rated("exact");
+      paintResult.quality = band.quality;
+      const chip = paint(CAPTURED, [paintResult])[0]!;
+      const grade = chip.querySelector(".rspr-grade")!;
+      expect(grade.textContent).toBe(`${band.quality.toFixed(1)}/5`);
+      expect(
+        chip.ownerDocument.defaultView?.getComputedStyle(grade).color ?? "",
+      ).toMatch(band.color);
+    }
+    const padded = paint(CAPTURED, [rated("exact")])[0]!.parentElement!;
+    expect(
+      padded.ownerDocument.defaultView?.getComputedStyle(padded).paddingTop,
+    ).toBe("8px");
+    expect(
+      padded.ownerDocument.defaultView?.getComputedStyle(padded).paddingBottom,
+    ).toBe("8px");
+    expect(
+      padded.ownerDocument.defaultView?.getComputedStyle(padded).verticalAlign,
+    ).toBe("middle");
+  });
+
+  it("underlines only the review count and keeps the score outside the link", () => {
+    const chip = paint(CAPTURED, [rated("exact")])[0]!;
+    const view = chip.ownerDocument.defaultView!;
+    const link = chip.querySelector("a.rspr-score")!;
+    const grade = chip.querySelector(".rspr-grade")!;
+    const meta = chip.querySelector(".rspr-meta")!;
+    const arrow = chip.querySelector(".rspr-out")!;
+    expect(link.contains(grade)).toBe(false);
+    expect(link.contains(meta)).toBe(true);
+    expect(link.contains(arrow)).toBe(true);
+    expect(meta.textContent).toBe("28 Reviews");
+    const deco = (el: Element) => {
+      const style = view.getComputedStyle(el);
+      return `${style.textDecoration} ${style.textDecorationLine}`;
+    };
+    expect(deco(meta)).toMatch(/underline/);
+    expect(deco(grade)).not.toMatch(/underline/);
+    expect(deco(arrow)).not.toMatch(/underline/);
   });
 
   it("links a profile and leaves not listed and ratings unavailable as spans", () => {
@@ -262,7 +299,7 @@ describe("extension chip", () => {
       td.querySelector("a.instructor-contact-link")?.getAttribute("href"),
     ).toBe("mailto:REDACTED");
     expect(chips[1]?.textContent).toContain("Possible Match");
-    expect(chips[1]?.textContent).toContain("4.5/5 · 4 reviews");
+    expect(chips[1]?.textContent).toContain("4.5/5 · 4 Reviews");
   });
 
   it("stops click, mousedown, mouseup, and Enter without canceling Enter", () => {

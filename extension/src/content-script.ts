@@ -78,6 +78,8 @@ export function runContentScript(
 
   const clearChips = () => {
     for (const chip of parent.querySelectorAll(".rspr-chip")) chip.remove();
+    for (const cell of parent.querySelectorAll("td.rspr-cell"))
+      cell.classList.remove("rspr-cell");
   };
   const stop = () => {
     watch?.disconnect();

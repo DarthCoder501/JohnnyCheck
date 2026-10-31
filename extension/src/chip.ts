@@ -5,10 +5,15 @@ export type ChipPaint = "loading" | RatingResult;
 
 const ELEMENT_NODE = 1;
 
-function scoreLabel(paint: Extract<RatingResult, { legacyId: number }>): string {
-  if (paint.status === "unrated") return "No Ratings Yet";
-  const reviews = paint.numRatings === 1 ? "review" : "reviews";
-  return `${paint.quality.toFixed(1)}/5 · ${paint.numRatings} ${reviews}`;
+function reviewCount(count: number): string {
+  return `${count} ${count === 1 ? "Review" : "Reviews"}`;
+}
+
+function scoreBand(quality: number): "high" | "mid" | "low" {
+  const shown = Number(quality.toFixed(1));
+  if (shown >= 4) return "high";
+  if (shown >= 3) return "mid";
+  return "low";
 }
 
 function accessibleName(person: string, paint: ChipPaint): string | null {
@@ -74,29 +79,40 @@ function createChip(
 ): HTMLElement {
   const profile = isProfile(paint);
   const chip = doc.createElement("span");
-  chip.className = "rspr-chip";
+  chip.className =
+    profile && paint.status === "rated"
+      ? `rspr-chip rspr-${scoreBand(paint.quality)}`
+      : "rspr-chip";
+  const row = doc.createElement("span");
+  row.className = "rspr-row";
   const mark = doc.createElement("span");
-  mark.className = "rspr-mark";
+  mark.className =
+    paint !== "loading" && paint.status === "not_listed"
+      ? "rspr-mark rspr-quiet"
+      : "rspr-mark";
   mark.setAttribute("aria-hidden", "true");
-  chip.append(mark);
-  const lines = doc.createElement("span");
-  lines.className = "rspr-lines";
-  if (profile && paint.match === "possible") {
-    const note = doc.createElement("span");
-    note.className = "rspr-note";
-    note.textContent = "Possible Match";
-    lines.append(note);
-  }
+  row.append(mark);
   if (profile) {
     const link = doc.createElement("a");
     link.className = "rspr-score";
-    link.append(doc.createTextNode(scoreLabel(paint)));
-    if (paint.status === "rated") {
+    if (paint.status === "unrated") {
+      link.textContent = "No Ratings Yet";
+    } else {
+      const grade = doc.createElement("span");
+      grade.className = "rspr-grade";
+      grade.textContent = `${paint.quality.toFixed(1)}/5`;
+      const sep = doc.createElement("span");
+      sep.className = "rspr-sep";
+      sep.textContent = " · ";
+      const meta = doc.createElement("span");
+      meta.className = "rspr-meta";
+      meta.textContent = reviewCount(paint.numRatings);
       const arrow = doc.createElement("span");
       arrow.className = "rspr-out";
       arrow.setAttribute("aria-hidden", "true");
       arrow.textContent = "↗";
-      link.append(arrow);
+      link.append(meta, arrow);
+      row.append(grade, sep);
     }
     const name = accessibleName(person, paint);
     if (name !== null) {
@@ -106,15 +122,21 @@ function createChip(
     link.setAttribute("href", rmpProfileUrl(paint.legacyId));
     link.setAttribute("target", "_blank");
     link.setAttribute("rel", "noopener noreferrer");
-    lines.append(link);
+    row.append(link);
+    if (paint.match === "possible") {
+      const note = doc.createElement("span");
+      note.className = "rspr-note";
+      note.textContent = "Possible Match";
+      row.append(note);
+    }
   } else if (paint !== "loading") {
-    lines.append(
-      doc.createTextNode(
-        paint.status === "not_listed" ? "Not Listed" : "Ratings Unavailable",
-      ),
-    );
+    const plain = doc.createElement("span");
+    plain.className = "rspr-plain";
+    plain.textContent =
+      paint.status === "not_listed" ? "Not Listed" : "Ratings Unavailable";
+    row.append(plain);
   }
-  if (lines.childNodes.length > 0) chip.append(lines);
+  chip.append(row);
   if (paint === "loading") chip.setAttribute("aria-label", "Loading ratings");
   for (const type of ["click", "mousedown", "mouseup", "keydown"]) {
     chip.addEventListener(type, stopRowEvent);
@@ -187,5 +209,6 @@ export function paintInstructorCell(
     place.anchor.parentNode?.insertBefore(chip, place.br.nextSibling);
     chips.push(chip);
   }
+  if (chips.length > 0) cell.classList.add("rspr-cell");
   return chips;
 }
