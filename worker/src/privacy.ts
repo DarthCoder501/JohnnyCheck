@@ -109,13 +109,14 @@ const PAGE = `<!DOCTYPE html>
 <p>What is sent, how results are cached, and what is not collected.</p>
 <p>In short: Red Storm reads the instructor name, campus, and subject description from a class search row to look up a public rating. It also sends a random installation ID for rate limits. No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
 <h2>What Is Sent</h2>
-<p>Red Storm reads the instructor name, campus, and subject description from a class search row and sends those three fields to look up a public rating. This is done by the service handling lookups, which we call the worker.</p>
+<p>Red Storm reads the instructor name, campus, and subject description from a class search row and sends those three fields to look up a public rating. This is done by the service handling lookups, which we call the worker. On a cache miss, the worker sends that instructor's family name and a school id to www.ratemyprofessors.com.</p>
 <h2>Random Installation ID</h2>
-<p>Each install sends a random installation ID used only for rate limits. The ID is not taken from a student record, and the worker does not store it with the rating.</p>
+<p>Each install sends a random installation ID used only for rate limits. The ID is not taken from a student record, and the worker does not store it with the rating. Rate-limit counters expire within minutes.</p>
 <h2>How Long Results Are Cached</h2>
-<p>The worker keeps a shared cache for 7 days for rated profiles and 24 hours for unrated profiles. The browser keeps a 24-hour cache for names that are not found, which we call not_listed names. If cacheVersion changes, local r* entries are dropped.</p>
+<p>The worker keeps a shared cache for 7 days for rated profiles and 24 hours for unrated profiles. chrome.storage.local keeps rated entries for 7 days, and unrated and not_listed names for 24 hours. If cacheVersion changes, local r* entries are dropped.</p>
 <h2>What Is Not Collected</h2>
 <p>No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
+<p>This extension's use of information complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
 </main>
 <footer>
 <div class="wrap">
@@ -128,6 +129,12 @@ const PAGE = `<!DOCTYPE html>
 
 export function privacyResponse(): Response {
   return new Response(PAGE, {
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "no-referrer",
+      "content-security-policy":
+        "default-src 'none'; style-src 'sha256-jVpYZPq0pjafV2Hn8fDcqZNUd1AA005HZsshaPiKkHM='; img-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    },
   });
 }

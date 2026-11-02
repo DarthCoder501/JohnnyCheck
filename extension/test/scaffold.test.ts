@@ -34,7 +34,7 @@ function paint(port: string, html: string) {
 }
 
 describe("extension scaffold", () => {
-  it("declares storage and the two hosts, with no port and no broad permissions", () => {
+  it("declares storage and the worker host, with no port and no broad permissions", () => {
     const text = readFileSync(
       new URL("../manifest.json", import.meta.url),
       "utf8",
@@ -42,7 +42,7 @@ describe("extension scaffold", () => {
     expect(text).not.toContain(":8103");
     expect(text).not.toContain("<all_urls>");
     expect(manifest.permissions).toEqual(["storage"]);
-    expect(manifest.host_permissions).toEqual([BANNER, WORKER]);
+    expect(manifest.host_permissions).toEqual([WORKER]);
     expect(manifest.content_scripts[0]?.matches).toEqual([BANNER]);
     const declared = JSON.stringify(manifest);
     expect(declared).not.toContain("tabs");

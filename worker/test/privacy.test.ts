@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { PRIVACY_PATH } from "../src/privacy";
@@ -35,12 +37,32 @@ describe("GET /privacy", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(response.headers.get("content-security-policy")).toContain(
+      "default-src 'none'",
+    );
+    expect(response.headers.get("content-security-policy")).toContain(
+      "script-src 'none'",
+    );
+    expect(response.headers.get("content-security-policy")).not.toContain(
+      "unsafe-inline",
+    );
     const body = await response.text();
     expect(body).toContain("instructor name, campus, and subject description");
     expect(body).toContain("random installation ID used only for rate limits");
     expect(body).toContain("shared cache for 7 days for rated profiles");
     expect(body).toContain("24 hours for unrated profiles");
     expect(body).toContain("not_listed names");
+    expect(body).toContain("www.ratemyprofessors.com");
+    expect(body).toContain("family name and a school id");
+    expect(body).toContain(
+      "chrome.storage.local keeps rated entries for 7 days",
+    );
+    expect(body).toContain("Rate-limit counters expire within minutes.");
+    expect(body).toContain(
+      "complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.",
+    );
     expect(body).toContain(
       "If cacheVersion changes, local r* entries are dropped.",
     );
@@ -73,6 +95,14 @@ describe("GET /privacy", () => {
       "Unofficial. Not affiliated with St. John's University",
     );
     expect(body).not.toContain(token);
+    const view = new Window();
+    view.document.write(body);
+    view.document.close();
+    const css = view.document.querySelector("style")?.textContent ?? "";
+    const hash = createHash("sha256").update(css).digest("base64");
+    expect(response.headers.get("content-security-policy")).toContain(
+      `style-src 'sha256-${hash}'`,
+    );
     expect(kvReads).toBe(0);
     expect(limitChecks).toBe(0);
   });
