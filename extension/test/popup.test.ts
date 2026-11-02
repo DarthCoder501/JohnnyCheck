@@ -61,9 +61,11 @@ describe("extension popup", () => {
   it("shows the title, the disclaimer, Show Ratings, and the privacy link", () => {
     const doc = popupDocument();
     const title = doc.querySelector(".rspr-popup-title");
-    expect(title?.textContent).toContain("Red Storm Professor Ratings");
+    expect(title?.textContent?.replace(/\s+/g, " ")).toContain(
+      "Red Storm Professor Ratings",
+    );
     expect(title?.querySelectorAll(".rspr-mark")).toHaveLength(1);
-    expect(doc.body.textContent).toContain(DISCLAIMER);
+    expect(doc.body.textContent?.replace(/\s+/g, " ")).toContain(DISCLAIMER);
     const toggle = doc.querySelector("label.rspr-popup-toggle");
     expect(toggle?.textContent).toContain("Show Ratings");
     expect(toggle?.querySelector("input[type='checkbox']")).not.toBeNull();

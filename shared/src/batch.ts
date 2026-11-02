@@ -13,9 +13,13 @@ import { isBoundedString, isRecord } from "./guards";
 
 type CampusCarrier = Pick<RatingRequestItem, "campus">;
 
-/** 48 fetches divided by four fetches per school. Queens is largest because it searches two schools. */
+/**
+ * 48 fetches divided by four fetches per school. Queens is largest because it searches two schools.
+ * Four listings are one person per request. A 3-person Online Learning batch used 56 ms of CPU on 2026-11-01.
+ */
 export function batchSizeFor(campusText: string | null | undefined): number {
   const schools = resolveCampus(campusText).schools.length;
+  if (schools === 4) return 1;
   return Math.floor(MAX_UPSTREAM_FETCHES / (schools * FETCHES_PER_SCHOOL));
 }
 

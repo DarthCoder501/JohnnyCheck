@@ -11,7 +11,7 @@ import { localCacheKey } from "../../shared/src/keys";
 import { parseInstructor } from "../../shared/src/names";
 import { runContentScript } from "../src/content-script";
 import { type RatingsQueryMessage } from "../src/grid";
-import { type LocalRatings } from "../src/paint";
+import { pageWake, type LocalRatings } from "../src/paint";
 
 function rated(): RatedResult {
   return {
@@ -252,5 +252,32 @@ describe("extension paint", () => {
     await shown(cold, expired, (message) => expiredMessages.push(message));
     expect(chip(cold).textContent).toBe("");
     expect(expiredMessages).toHaveLength(1);
+  });
+
+  it("does not surface a rejected version check after the extension context is gone", async () => {
+    const previous = (globalThis as { chrome?: unknown }).chrome;
+    const rejections: unknown[] = [];
+    const onRejection = (reason: unknown) => {
+      rejections.push(reason);
+    };
+    process.on("unhandledRejection", onRejection);
+    (globalThis as { chrome: unknown }).chrome = {
+      runtime: {
+        sendMessage: () =>
+          Promise.reject(new Error("Extension context invalidated.")),
+      },
+    };
+    try {
+      const wake = pageWake();
+      if (wake === undefined) throw new Error("wake missing");
+      wake();
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(rejections).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onRejection);
+      if (previous === undefined)
+        delete (globalThis as { chrome?: unknown }).chrome;
+      else (globalThis as { chrome: unknown }).chrome = previous;
+    }
   });
 });

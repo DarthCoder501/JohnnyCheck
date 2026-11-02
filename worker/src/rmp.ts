@@ -201,13 +201,28 @@ async function readPage(
     return "blocked";
   }
   if (response.status !== 200) {
+    console.warn(
+      JSON.stringify({
+        event: "rmp_failed",
+        reason: "status",
+        status: response.status,
+      }),
+    );
     return null;
   }
+  let parsed: unknown;
   try {
-    return pageFrom(JSON.parse(text) as unknown, schoolId);
+    parsed = JSON.parse(text) as unknown;
   } catch {
+    console.warn(JSON.stringify({ event: "rmp_failed", reason: "bad_json" }));
     return null;
   }
+  const page = pageFrom(parsed, schoolId);
+  if (page === null) {
+    console.warn(JSON.stringify({ event: "rmp_failed", reason: "no_data" }));
+    return null;
+  }
+  return page;
 }
 
 function reserveFetch(input: SurnameSearchInput): boolean {
@@ -229,6 +244,7 @@ async function fetchPage(
   nowMs: number,
 ): Promise<Page | "blocked" | null> {
   if (!reserveFetch(input)) {
+    console.warn(JSON.stringify({ event: "rmp_failed", reason: "budget" }));
     return null;
   }
   await acquire();
@@ -260,6 +276,7 @@ async function fetchPage(
     ]);
     return await readPage(response, input.schoolId, nowMs);
   } catch {
+    console.warn(JSON.stringify({ event: "rmp_failed", reason: "throw" }));
     return null;
   } finally {
     release();

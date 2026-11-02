@@ -328,8 +328,8 @@ describe("POST /v1/ratings", () => {
     const cases = [
       [" Queens Campus", 7],
       ["Manhattan Campus", 5],
-      ["Online Learning", 4],
-      [null, 4],
+      ["Online Learning", 2],
+      [null, 2],
       ["Staten Island", 5],
     ] as const;
 

@@ -124,7 +124,7 @@ describe("extension fetch against the deployed worker", () => {
       session,
       fetchImpl,
     );
-    expect(lengths(calls.slice(hiddenAt))).toEqual([3, 1]);
+    expect(lengths(calls.slice(hiddenAt))).toEqual([1, 1, 1, 1]);
     expect(
       hiddenReply.results.h0 && isRatingResult(hiddenReply.results.h0),
     ).toBe(true);

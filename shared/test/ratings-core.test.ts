@@ -734,8 +734,8 @@ describe("batch limits", () => {
     expect(batchSizeFor(" Queens Campus")).toBe(6);
     expect(batchSizeFor("Manhattan Campus")).toBe(4);
     expect(batchSizeFor("Staten Island")).toBe(4);
-    expect(batchSizeFor("Online Learning")).toBe(3);
-    expect(batchSizeFor(null)).toBe(3);
+    expect(batchSizeFor("Online Learning")).toBe(1);
+    expect(batchSizeFor(null)).toBe(1);
 
     const queens = { campus: " Queens Campus" as string | null };
     const online = { campus: "Online Learning" as string | null };
@@ -749,7 +749,9 @@ describe("batch limits", () => {
     ]);
     expect(chunks.map((chunk) => chunk.map((item) => item.id))).toEqual([
       ["q1", "q2"],
-      ["o1", "o2", "o3"],
+      ["o1"],
+      ["o2"],
+      ["o3"],
       ["o4"],
     ]);
 
@@ -765,14 +767,14 @@ describe("batch limits", () => {
     expect(
       parseRatingsRequest({ items: batch(5, "Manhattan Campus") }).ok,
     ).toBe(false);
-    expect(parseRatingsRequest({ items: batch(3, "Online Learning") }).ok).toBe(
+    expect(parseRatingsRequest({ items: batch(1, "Online Learning") }).ok).toBe(
       true,
     );
-    expect(parseRatingsRequest({ items: batch(4, "Online Learning") }).ok).toBe(
+    expect(parseRatingsRequest({ items: batch(2, "Online Learning") }).ok).toBe(
       false,
     );
-    expect(parseRatingsRequest({ items: batch(3, null) }).ok).toBe(true);
-    expect(parseRatingsRequest({ items: batch(4, null) }).ok).toBe(false);
+    expect(parseRatingsRequest({ items: batch(1, null) }).ok).toBe(true);
+    expect(parseRatingsRequest({ items: batch(2, null) }).ok).toBe(false);
     expect(parseRatingsRequest({ items: batch(4, "Staten Island") }).ok).toBe(
       true,
     );

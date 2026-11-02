@@ -14,6 +14,10 @@ async function stageExtension(): Promise<string> {
   await cp(path.join(root, "extension/popup.html"), path.join(stage, "popup.html"));
   await cp(path.join(root, "extension/popup.css"), path.join(stage, "popup.css"));
   await cp(path.join(root, "extension/content.css"), path.join(stage, "content.css"));
+  // Chrome refuses to start the service worker when a manifest icon file is missing.
+  await cp(path.join(root, "extension/icons"), path.join(stage, "icons"), {
+    recursive: true,
+  });
   const manifest = JSON.parse(await readFile(path.join(root, "extension/manifest.json"), "utf8")) as {
     background?: { service_worker: string };
   };

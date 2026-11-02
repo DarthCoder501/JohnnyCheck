@@ -72,6 +72,7 @@ async function readFresh(
   try {
     raw = await kv.get(key);
   } catch {
+    console.warn(JSON.stringify({ event: "kv_read_failed" }));
     return null;
   }
   if (raw === null) {
@@ -84,6 +85,7 @@ async function readFresh(
     }
     return parsed.result;
   } catch {
+    console.warn(JSON.stringify({ event: "kv_bad_value" }));
     return null;
   }
 }
@@ -170,16 +172,21 @@ export async function handleRatings(
   try {
     body = await request.json();
   } catch {
+    console.warn(JSON.stringify({ event: "ratings_rejected", reason: "json" }));
     return Response.json({ error: "Body must be JSON." }, { status: 400 });
   }
   const parsed = parseRatingsRequest(body);
   if (!parsed.ok) {
+    console.warn(
+      JSON.stringify({ event: "ratings_rejected", reason: "batch" }),
+    );
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
   const nowMs = Date.now();
   const budget: FetchBudget = { used: 0, max: MAX_UPSTREAM_FETCHES };
   const written = new Set<string>();
+  let kvHits = 0;
   const results: Record<string, RatingResult> = {};
   const counts = {
     skipped: 0,
@@ -202,6 +209,9 @@ export async function handleRatings(
       name,
     );
     const cached = await readFresh(env.RATINGS, key, nowMs);
+    if (cached !== null) {
+      kvHits += 1;
+    }
     const result =
       cached ?? (await searchSchools(item, name, env, budget, nowMs));
     if (cached === null) {
@@ -216,6 +226,7 @@ export async function handleRatings(
       event: "ratings",
       items: parsed.request.items.length,
       upstream: budget.used,
+      kv: kvHits,
       ...counts,
     }),
   );

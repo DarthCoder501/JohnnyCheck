@@ -96,13 +96,8 @@ export async function handleLimitedRatings(
       ip,
       clientKey(request),
     );
-  } catch (error) {
-    console.warn(
-      JSON.stringify({
-        event: "ratings_limit_failed",
-        message: error instanceof Error ? error.message : "unknown",
-      }),
-    );
+  } catch {
+    console.warn(JSON.stringify({ event: "ratings_limit_failed" }));
     return new Response(null, { status: 429 });
   }
   if (decision === "ip" || decision === "client") {

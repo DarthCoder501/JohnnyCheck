@@ -119,7 +119,8 @@ export function pageWake(): (() => void) | undefined {
   )
     return undefined;
   return () => {
-    void chrome.runtime.sendMessage({ checkVersion: true });
+    // A reload leaves this page's content script alive; the promise rejects.
+    void chrome.runtime.sendMessage({ checkVersion: true }).catch(() => undefined);
   };
 }
 
