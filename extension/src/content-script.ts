@@ -53,8 +53,75 @@ function enabledValue(value: unknown): boolean {
   return typeof value === "boolean" ? value : ENABLED_DEFAULT;
 }
 
+interface PageDoc {
+  getElementById(id: string): unknown;
+  querySelector?(selector: string): unknown;
+  body?: unknown;
+  documentElement?: unknown;
+  defaultView?: unknown;
+}
+
+function headerLabel(header: Element): string {
+  return (header.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function hasResultsHeader(table: Element, label: string): boolean {
+  for (const header of table.querySelectorAll(":scope > thead th")) {
+    if (header.getAttribute("data-property") === label) return true;
+    if (headerLabel(header) === label) return true;
+  }
+  return false;
+}
+
+/** Largest ancestor that still contains only this results table, so a summary grid beside it stays out. */
+function scopeForResultsTable(table: Element): Element {
+  let node = table;
+  while (node.parentElement !== null) {
+    const grids = node.parentElement.querySelectorAll(
+      'table.grid[role="grid"], table.search-results-table',
+    );
+    if (grids.length !== 1) return node;
+    node = node.parentElement;
+  }
+  return node;
+}
+
+/** Browse has `#searchResultsParent` in the first HTML. Register for Classes may only have `#searchResults`, a grid with an Add column, or either of those after the script starts. */
+function resultsScope(doc: PageDoc): Element | null {
+  const parent = doc.getElementById("searchResultsParent");
+  if (isElement(parent)) return parent;
+  const anchor = resultsAnchor(doc);
+  const search = doc.querySelector?.("#searchResults");
+  if (
+    isElement(search) &&
+    search.querySelector('table.grid[role="grid"]') !== null
+  ) {
+    return search;
+  }
+  if (anchor === null) return null;
+  for (const node of anchor.querySelectorAll('table.grid[role="grid"]')) {
+    if (
+      !hasResultsHeader(node, "instructor") ||
+      !hasResultsHeader(node, "add")
+    ) {
+      continue;
+    }
+    return scopeForResultsTable(node);
+  }
+  for (const node of anchor.querySelectorAll("table.search-results-table")) {
+    if (!hasResultsHeader(node, "instructor")) continue;
+    return scopeForResultsTable(node);
+  }
+  return null;
+}
+
+function resultsAnchor(doc: PageDoc): Element | null {
+  if (isElement(doc.body)) return doc.body;
+  return isElement(doc.documentElement) ? doc.documentElement : null;
+}
+
 export function runContentScript(
-  doc: { getElementById(id: string): unknown; defaultView?: unknown },
+  doc: PageDoc,
   port: string,
   view?: ViewHost,
   sync?: SyncListen,
@@ -63,11 +130,11 @@ export function runContentScript(
   wake?: () => void,
 ): ContentSession | null {
   if (port !== CLASS_SEARCH_PORT) return null;
-  const parent = doc.getElementById("searchResultsParent");
-  if (!isElement(parent)) return null;
   const host = view ?? viewHost(doc.defaultView);
   if (host === null) return null;
 
+  let scope: Element | null = null;
+  let finder: { disconnect(): void } | null = null;
   let watch: {
     disconnect(): void;
     applyReply(reply: RatingsQueryReply): void;
@@ -77,18 +144,34 @@ export function runContentScript(
   let showing = false;
 
   const clearChips = () => {
-    for (const chip of parent.querySelectorAll(".rspr-chip")) chip.remove();
-    for (const cell of parent.querySelectorAll("td.rspr-cell"))
+    if (scope === null) return;
+    for (const chip of scope.querySelectorAll(".rspr-chip")) chip.remove();
+    for (const cell of scope.querySelectorAll("td.rspr-cell"))
       cell.classList.remove("rspr-cell");
   };
   const stop = () => {
+    finder?.disconnect();
+    finder = null;
     watch?.disconnect();
     watch = null;
     clearChips();
   };
   const start = () => {
     if (watch !== null || !showing) return;
-    watch = observeGrid(parent, cacheVersion, host, local, deliver, wake);
+    const next = resultsScope(doc);
+    if (next === null) {
+      if (finder !== null) return;
+      const anchor = resultsAnchor(doc);
+      if (anchor === null) return;
+      const observer = new host.MutationObserver(() => start());
+      observer.observe(anchor, { childList: true, subtree: true });
+      finder = observer;
+      return;
+    }
+    finder?.disconnect();
+    finder = null;
+    scope = next;
+    watch = observeGrid(scope, cacheVersion, host, local, deliver, wake);
   };
   const applyEnabled = (on: boolean) => {
     showing = on;

@@ -12,6 +12,7 @@ import {
   canPaintInstructor,
   instructorChip,
   paintInstructorCell,
+  plainInstructorCell,
   type ChipPaint,
 } from "./chip";
 import {
@@ -33,8 +34,9 @@ export interface ViewHost {
   MutationObserver: typeof MutationObserver;
 }
 
+/** Browse uses `table.grid`. The registration view uses `table.search-results-table`. */
 const GRID_SELECTOR =
-  'ssb-class-search-results .class-search-results-grid > table.grid[role="grid"]';
+  'table.grid[role="grid"], table.search-results-table';
 
 function headerLabel(header: Element): string {
   return (header.textContent ?? "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -60,9 +62,41 @@ function columnText(cell: Element | null): string | null {
   return text.trim() === "" ? null : text;
 }
 
+function dataRows(table: Element): Element[] {
+  const marked = [
+    ...table.querySelectorAll(':scope > tbody > tr[role="row"]'),
+  ];
+  if (marked.length > 0) return marked;
+  return [...table.querySelectorAll(":scope > tbody > tr")].filter(
+    (row) => row.querySelector(":scope > td") !== null,
+  );
+}
+
+function instructorNames(cell: HTMLElement): string[] {
+  if (cell.querySelector("a.instructor-contact-link") !== null) {
+    return instructorTextsFromCell(cell as unknown as InstructorCellNode);
+  }
+  const copy = cell.cloneNode(true) as HTMLElement;
+  for (const chip of copy.querySelectorAll(".rspr-chip")) chip.remove();
+  return instructorTextsFromCell(copy as unknown as InstructorCellNode);
+}
+
+function resultTables(root: ParentNode): Element[] {
+  const tables = [...root.querySelectorAll(GRID_SELECTOR)];
+  if (isGrid(root)) tables.unshift(root);
+  return tables;
+}
+
+function isGrid(root: ParentNode): root is Element {
+  return (
+    typeof (root as Element).matches === "function" &&
+    (root as Element).matches(GRID_SELECTOR)
+  );
+}
+
 function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
   const slots: Paintable[] = [];
-  for (const table of root.querySelectorAll(GRID_SELECTOR)) {
+  for (const table of resultTables(root)) {
     const headers = [...table.querySelectorAll(":scope > thead > tr > th")];
     const keyed = table.querySelector("[data-property]") !== null;
     const instructorHeader = keyed
@@ -71,9 +105,7 @@ function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
         )
       : headers.some((header) => headerLabel(header) === "instructor");
     if (!instructorHeader) continue;
-    for (const row of table.querySelectorAll(
-      ':scope > tbody > tr[role="row"]',
-    )) {
+    for (const row of dataRows(table)) {
       const instructor = columnCell(
         row,
         headers,
@@ -83,25 +115,27 @@ function collectSlots(root: ParentNode, cacheVersion: number): Paintable[] {
       );
       if (instructor === null) continue;
       const cell = instructor as HTMLElement;
-      const names = instructorTextsFromCell(
-        cell as unknown as InstructorCellNode,
-      );
+      const names = instructorNames(cell);
       const campus = columnText(
         columnCell(row, headers, "campus", "campus", keyed),
       );
-      const subject = columnText(
+      const subjectCell =
         columnCell(
           row,
           headers,
           "subjectDescription",
           "subject description",
           keyed,
-        ),
-      );
+        ) ??
+        (keyed
+          ? null
+          : columnCell(row, headers, "subject", "subject", false));
+      const subject = columnText(subjectCell);
       for (let index = 0; index < names.length; index += 1) {
         const name = names[index];
-        // shortcut: plain text has no anchor or br, so it is not requested
-        if (name === undefined || !canPaintInstructor(cell, index)) continue;
+        const linked = canPaintInstructor(cell, index);
+        if (name === undefined || (!linked && !plainInstructorCell(cell)))
+          continue;
         const parsed = parseInstructor(name);
         if (parsed === null) continue;
         const key = localCacheKey(cacheVersion, campus, subject, parsed);

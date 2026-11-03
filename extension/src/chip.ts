@@ -173,12 +173,29 @@ export function canPaintInstructor(cell: HTMLElement, index: number): boolean {
   return anchorAt(cell, index) !== null;
 }
 
+/** Registration rows can be a plain name with no link or line break. */
+export function plainInstructorCell(cell: HTMLElement): boolean {
+  if (instructorAnchors(cell).length > 0) return false;
+  const copy = cell.cloneNode(true) as HTMLElement;
+  for (const chip of copy.querySelectorAll(".rspr-chip")) chip.remove();
+  const text = (copy.textContent ?? "").replace(/\s+/g, " ").trim();
+  return text !== "" && !isPlaceholder(text);
+}
+
+function plainChip(cell: HTMLElement, index: number): HTMLElement | null {
+  const chips = [...cell.querySelectorAll(":scope > .rspr-chip")];
+  const chip = chips[index];
+  return chip !== undefined && isChip(chip) ? chip : null;
+}
+
 export function instructorChip(
   cell: HTMLElement,
   index: number,
 ): HTMLElement | null {
   const place = anchorAt(cell, index);
-  if (place === null) return null;
+  if (place === null) {
+    return plainInstructorCell(cell) ? plainChip(cell, index) : null;
+  }
   const next = place.br.nextSibling;
   return next !== null && isChip(next) ? next : null;
 }
@@ -192,7 +209,23 @@ export function paintInstructorCell(
   for (let index = 0; index < paints.length; index += 1) {
     const paint = paints[index];
     const place = anchorAt(cell, index);
-    if (paint === undefined || place === null) continue;
+    if (paint === undefined) continue;
+    if (place === null) {
+      if (!plainInstructorCell(cell)) continue;
+      const copy = cell.cloneNode(true) as HTMLElement;
+      for (const chip of copy.querySelectorAll(".rspr-chip")) chip.remove();
+      const person = (copy.textContent ?? "").replace(/\s+/g, " ").trim();
+      const existing = plainChip(cell, index);
+      if (existing !== null && !refresh) {
+        chips.push(existing);
+        continue;
+      }
+      const chip = createChip(cell.ownerDocument, person, paint);
+      if (existing !== null) existing.replaceWith(chip);
+      else cell.appendChild(chip);
+      chips.push(chip);
+      continue;
+    }
     const next = place.br.nextSibling;
     const person = (place.anchor.textContent ?? "").replace(/\s+/g, " ").trim();
     if (next !== null && isChip(next)) {

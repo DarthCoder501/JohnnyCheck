@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
 import { parseRatingsRequest } from "../../shared/src/batch";
-import { SCHOOL_IDS, type RatingsResponse } from "../../shared/src/contract";
+import { SCHOOL_IDS } from "../../shared/src/contract";
 import { localCacheKey } from "../../shared/src/keys";
 import { parseInstructor } from "../../shared/src/names";
 import { runContentScript } from "../src/content-script";
-import { scanGrid, type RatingsQueryReply } from "../src/grid";
+import { scanGrid } from "../src/grid";
 
 const SECRET_HREF = "mailto:secret@example.edu";
 const SECRET_ID = "BANNER-SECRET";
@@ -293,11 +293,109 @@ describe("extension grid", () => {
       "Christopher P. Vogt",
     );
     expect(oldCell.querySelectorAll(".rspr-chip")).toHaveLength(1);
+  });
 
-    const reply: RatingsQueryReply = {
-      cacheVersion: 1,
-      results: {},
-    } satisfies RatingsResponse;
-    expect(reply.cacheVersion).toBe(1);
+  it("paints the register-for-classes grid and leaves the summary alone", async () => {
+    const row = propertyRow({
+      courseReferenceNumber: "10946",
+      status: "16 of 25 seats remain.",
+      instructor: instructorHtml("Geoffrey Norman Dick"),
+      campus: " Queens Campus",
+      subjectDescription: "COMPUTER SCIENCE - CCPS",
+    }).replace(
+      "</tr>",
+      `<td role="gridcell"><button type="button" class="add-section-button">Add</button></td></tr>`,
+    );
+    const head = propertyHead().concat(
+      `<th role="columnheader">Add</th>`,
+    );
+    const summary = `<table id="summaryGrid" class="grid" role="grid"><thead><tr><th data-property="instructor" role="columnheader">Instructor</th><th role="columnheader">Action</th></tr></thead><tbody><tr role="row"><td data-property="instructor" role="gridcell">${instructorHtml("Joan E. DeBello")}</td><td role="gridcell">None</td></tr></tbody></table>`;
+    const window = mount(
+      `${summary}<div id="searchResults"><table class="ui-widget grid resizable" role="grid"><thead><tr>${head}</tr></thead><tbody>${row}</tbody></table></div>`,
+    );
+    runContentScript(window.document, "8103");
+    await frameSettled(window);
+    const painted = chips(window);
+    expect(painted).toHaveLength(1);
+    expect(painted[0]?.parentElement?.getAttribute("data-property")).toBe(
+      "instructor",
+    );
+    expect(painted[0]?.parentElement?.textContent).toContain(
+      "Geoffrey Norman Dick",
+    );
+    expect(window.document.querySelector("#summaryGrid .rspr-chip")).toBeNull();
+    expect(
+      window.document.querySelector(".add-section-button")?.parentElement
+        ?.querySelector(".rspr-chip"),
+    ).toBeNull();
+
+    const wrapped = mount(
+      `${summary}<div class="find-classes"><table class="ui-widget grid resizable" role="grid"><thead><tr>${head}</tr></thead><tbody>${row}</tbody></table></div>`,
+    );
+    runContentScript(wrapped.document, "8103");
+    await frameSettled(wrapped);
+    expect(chips(wrapped)).toHaveLength(1);
+    expect(wrapped.document.querySelector("#summaryGrid .rspr-chip")).toBeNull();
+    expect(wrapped.document.querySelector(".find-classes .rspr-chip")).not.toBeNull();
+  });
+
+  it("paints the registration view's plain-text results and skips the summary", async () => {
+    const window = mount(`<div class="class-registration-wrapper">
+      <table class="search-results-table">
+        <thead><tr>
+          <th>Subject</th><th>Course</th><th>Section</th><th>CRN</th>
+          <th>Title</th><th>Credits</th><th>Instructor</th><th>Meeting</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>COMPUTER SCIENCE - CCPS</td><td>1115</td><td>0</td><td>12846</td>
+            <td>COMPUTER PROG FUN</td><td>3</td>
+            <td><span>Joan E. DeBello</span></td>
+            <td>Lecture</td><td>23 of 25 seats remain.</td>
+            <td><button class="btn-add-section" type="button">Add</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="summary-table" role="grid">
+        <thead><tr><th>Title</th><th>Course</th><th>Credits</th><th>Type</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody><tr><td>DATA SECURITY &amp; CRYPTOGRAPHY</td><td>CUS 1185</td><td>3</td><td>Lecture</td><td>Registered</td><td>None</td></tr></tbody>
+      </table>
+    </div>`);
+    runContentScript(window.document, "8103");
+    await frameSettled(window);
+    const painted = chips(window);
+    expect(painted).toHaveLength(1);
+    expect(painted[0]?.parentElement?.textContent).toContain("Joan E. DeBello");
+    expect(window.document.querySelector(".summary-table .rspr-chip")).toBeNull();
+    expect(window.document.querySelector(".btn-add-section")?.parentElement?.querySelector(".rspr-chip")).toBeNull();
+    const message = scanGrid(
+      window.document.body as unknown as ParentNode,
+      1,
+    );
+    expect(message.items[0]?.name).toBe("Joan E. DeBello");
+    expect(message.items[0]?.subject).toBe("COMPUTER SCIENCE - CCPS");
+  });
+
+  it("paints after Register for Classes inserts the results parent", async () => {
+    const window = mount(`<div id="other"></div>`);
+    runContentScript(window.document, "8103");
+    await frameSettled(window);
+    expect(chips(window)).toHaveLength(0);
+    window.document.body.innerHTML = `<div id="searchResultsParent">${results(
+      propertyHead(),
+      propertyRow({
+        courseReferenceNumber: "10946",
+        status: "16 of 25 seats remain.",
+        instructor: instructorHtml("Joan E. DeBello"),
+        campus: " Queens Campus",
+        subjectDescription: "COMPUTER SCIENCE - CCPS",
+      }),
+    )}</div>`;
+    await mutationsSettled();
+    await frameSettled(window);
+    expect(chips(window)).toHaveLength(1);
+    expect(chips(window)[0]?.parentElement?.textContent).toContain(
+      "Joan E. DeBello",
+    );
   });
 });
