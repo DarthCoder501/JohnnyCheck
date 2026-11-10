@@ -65,6 +65,8 @@ const PAGE = `<!DOCTYPE html>
     line-height: 34px;
   }
   main p { margin: 0 0 16px; }
+  ul { margin: 0 0 16px; padding-left: 1.25rem; }
+  li { margin: 0 0 4px; }
   h2 {
     margin: 32px 0 8px;
     padding-bottom: 8px;
@@ -106,17 +108,30 @@ const PAGE = `<!DOCTYPE html>
 </header>
 <main class="wrap">
 <p class="page-title">Privacy Policy</p>
-<p>What is sent, how results are cached, and what is not collected.</p>
-<p>In short: Red Storm reads the instructor name, campus, and subject description from a class search row to look up a public rating. It also sends a random installation ID for rate limits. No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
-<h2>What Is Sent</h2>
-<p>Red Storm reads the instructor name, campus, and subject description from a class search row and sends those three fields to look up a public rating. This is done by the service handling lookups, which we call the worker. On a cache miss, the worker sends that instructor's family name and a school id to www.ratemyprofessors.com.</p>
-<h2>Random Installation ID</h2>
-<p>Each install sends a random installation ID used only for rate limits. The ID is not taken from a student record, and the worker does not store it with the rating. Rate-limit counters expire within minutes.</p>
-<h2>How Long Results Are Cached</h2>
-<p>The worker keeps a shared cache for 7 days for rated profiles and 24 hours for unrated profiles. chrome.storage.local keeps rated entries for 7 days, and unrated and not_listed names for 24 hours. If cacheVersion changes, local r* entries are dropped.</p>
-<h2>What Is Not Collected</h2>
-<p>No student id, schedule, grades, cookies, or auth tokens are collected or sold.</p>
-<p>This extension's use of information complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
+<p>The short version: Red Storm only looks up public professor ratings. It never sees or collects your student ID, class schedule, grades, passwords, or login information, and nothing is ever sold.</p>
+<h2>What Red Storm looks at</h2>
+<p>When you search for classes, Red Storm reads three things from each row on the page: the instructor’s name, the campus, and the subject. It uses only those three details to find that instructor’s public rating on RateMyProfessors.com. It does not read anything else on the page.</p>
+<p>Those details go to a small service we run to do the lookup (we call it “the worker”). If the worker doesn’t already have the rating saved, it asks RateMyProfessors.com for it using only the instructor’s last name and your school.</p>
+<h2>A random ID, not your identity</h2>
+<p>Each installation of Red Storm creates a random ID, like a made-up serial number. It’s used for one reason: to stop any single install from sending too many requests. It isn’t connected to you, your student record, or your name, and it isn’t saved alongside any rating. The counters that use it reset within minutes.</p>
+<h2>How long results are saved (cached)</h2>
+<p>To make lookups faster and avoid asking RateMyProfessors.com repeatedly, results are saved temporarily:</p>
+<ul>
+<li>Professors who have a rating: saved for 7 days.</li>
+<li>Professors with no rating or no listing: saved for 24 hours.</li>
+</ul>
+<p>This happens in two places: on our worker, and in your browser’s local extension storage. When we release an update that changes how results are saved, your browser’s saved ratings are cleared and refreshed automatically.</p>
+<h2>What Red Storm never collects</h2>
+<ul>
+<li>Your student ID</li>
+<li>Your class schedule</li>
+<li>Your grades</li>
+<li>Cookies</li>
+<li>Login or authentication tokens</li>
+</ul>
+<p>We never sell your data.</p>
+<h2>Chrome Web Store compliance</h2>
+<p>Red Storm’s use of information follows the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
 </main>
 <footer>
 <div class="wrap">
@@ -134,7 +149,7 @@ export function privacyResponse(): Response {
       "x-content-type-options": "nosniff",
       "referrer-policy": "no-referrer",
       "content-security-policy":
-        "default-src 'none'; style-src 'sha256-jVpYZPq0pjafV2Hn8fDcqZNUd1AA005HZsshaPiKkHM='; img-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "default-src 'none'; style-src 'sha256-9/M6m21YaPHQZdhygRz4raq20K9xnl/8qW4HgICjCJ8='; img-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
     },
   });
 }

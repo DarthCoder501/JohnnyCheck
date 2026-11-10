@@ -25,20 +25,19 @@ test("GET /privacy is the policy page", async ({ page }) => {
   expect(response?.headers()["content-type"]).toContain("text/html");
   const body = await page.locator("body").innerText();
   expect(body).toContain("Red Storm Professor Ratings");
-  expect(body).toContain("instructor name, campus, and subject description");
-  expect(body).toContain("random installation ID used only for rate limits");
-  expect(body).toContain("shared cache for 7 days for rated profiles");
-  expect(body).toContain("24 hours for unrated profiles");
-  expect(body).toContain("not_listed names");
+  expect(body).toContain("the instructor’s name, the campus, and the subject");
+  expect(body).toContain("stop any single install from sending too many requests");
+  expect(body).toContain("Professors who have a rating: saved for 7 days.");
   expect(body).toContain(
-    "If cacheVersion changes, local r* entries are dropped.",
+    "Professors with no rating or no listing: saved for 24 hours.",
   );
   expect(body).toContain(
-    "No student id, schedule, grades, cookies, or auth tokens are collected or sold.",
+    "your browser’s saved ratings are cleared and refreshed automatically",
   );
+  expect(body).toContain("We never sell your data.");
   expect(body).not.toMatch(/Bearer |rmpToken/);
   await expect(page.locator("h1")).toHaveCount(1);
-  await expect(page.locator("h2")).toHaveCount(4);
+  await expect(page.locator("h2")).toHaveCount(5);
   await expect(page.locator("button, img")).toHaveCount(0);
   await expect(page.locator("header")).toHaveCSS(
     "background-color",

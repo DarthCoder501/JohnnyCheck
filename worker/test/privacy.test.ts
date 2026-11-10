@@ -49,25 +49,24 @@ describe("GET /privacy", () => {
       "unsafe-inline",
     );
     const body = await response.text();
-    expect(body).toContain("instructor name, campus, and subject description");
-    expect(body).toContain("random installation ID used only for rate limits");
-    expect(body).toContain("shared cache for 7 days for rated profiles");
-    expect(body).toContain("24 hours for unrated profiles");
-    expect(body).toContain("not_listed names");
-    expect(body).toContain("www.ratemyprofessors.com");
-    expect(body).toContain("family name and a school id");
+    expect(body).toContain("the instructor’s name, the campus, and the subject");
+    expect(body).toContain("RateMyProfessors.com");
+    expect(body).toContain("the instructor’s last name and your school");
+    expect(body).toContain("stop any single install from sending too many requests");
+    expect(body).toContain("The counters that use it reset within minutes.");
+    expect(body).toContain("Professors who have a rating: saved for 7 days.");
     expect(body).toContain(
-      "chrome.storage.local keeps rated entries for 7 days",
+      "Professors with no rating or no listing: saved for 24 hours.",
     );
-    expect(body).toContain("Rate-limit counters expire within minutes.");
+    expect(body).toContain("browser’s local extension storage");
     expect(body).toContain(
-      "complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.",
+      "your browser’s saved ratings are cleared and refreshed automatically",
     );
+    expect(body).toContain("Your student ID");
+    expect(body).toContain("Login or authentication tokens");
+    expect(body).toContain("We never sell your data.");
     expect(body).toContain(
-      "If cacheVersion changes, local r* entries are dropped.",
-    );
-    expect(body).toContain(
-      "No student id, schedule, grades, cookies, or auth tokens are collected or sold.",
+      "follows the Chrome Web Store User Data Policy, including its Limited Use requirements.",
     );
     expect(body).toContain("<h1>Red Storm Professor Ratings</h1>");
     expect(body).toContain(
@@ -90,7 +89,7 @@ describe("GET /privacy", () => {
     expect(body).toContain("font-family: Arial, sans-serif");
     expect(body).toContain("font-size: 16px");
     expect(body).toContain("border-bottom: 2px solid #148280");
-    expect(body.match(/<h2>/g)).toHaveLength(4);
+    expect(body.match(/<h2>/g)).toHaveLength(5);
     expect(body).toContain(
       "Unofficial. Not affiliated with St. John's University",
     );
